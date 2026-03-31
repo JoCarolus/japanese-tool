@@ -1,0 +1,32 @@
+import { createClient } from '@supabase/supabase-js'
+
+export type Translation = {
+  id: string
+  input_text: string
+  direction: 'en-to-jp' | 'jp-to-en'
+  english: string
+  japanese_kanji: string
+  japanese_kana: string
+  japanese_romaji: string
+  syllable_breakdown: string
+  pitch_accent: string
+  pronunciation_tips: string
+  breakdown: BreakdownItem[]
+  structure: string
+  tips: string
+  created_at: string
+}
+
+export type BreakdownItem = {
+  word: string
+  reading: string
+  meaning: string
+  role: string
+}
+
+export type TranslationResult = Omit<Translation, 'id' | 'created_at' | 'input_text' | 'direction'>
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
