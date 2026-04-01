@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 
 export type Translation = {
   id: string
-  user_id: string
+  user_id?: string
   input_text: string
   direction: 'en-to-jp' | 'jp-to-en'
   english: string
@@ -25,7 +25,7 @@ export type BreakdownItem = {
   role: string
 }
 
-export type TranslationResult = Omit<Translation, 'id' | 'created_at' | 'input_text' | 'direction'>
+export type TranslationResult = Omit<Translation, 'id' | 'created_at' | 'input_text' | 'direction' | 'user_id'>
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
