@@ -18,7 +18,7 @@ type Props = {
 
 export default function TranslateInput({
   input, intended, mode, loading,
-  onInputChange, onIntendedChange, onModeChange, onTranslate, onClear,
+  onInputChange, onIntendedChange, onTranslate, onClear,
 }: Props) {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -36,34 +36,13 @@ export default function TranslateInput({
   const btnLabel = mode === 'check' ? 'Check my Japanese' : 'Translate'
   const showMic = mode === 'jp-to-en' || mode === 'check'
 
-  // When mic returns result, store display text in input
-  // but we need to track the Japanese-only version for sending
   function handleMicResult(displayText: string, _japaneseOnly: string) {
     onInputChange(displayText)
   }
 
   return (
     <div className="input-area">
-      <div className="mode-tabs">
-        <button
-          className={`mode-tab ${mode === 'en-to-jp' ? 'active' : ''}`}
-          onClick={() => onModeChange('en-to-jp')}
-        >
-          EN → JP
-        </button>
-        <button
-          className={`mode-tab ${mode === 'jp-to-en' ? 'active' : ''}`}
-          onClick={() => onModeChange('jp-to-en')}
-        >
-          JP → EN
-        </button>
-        <button
-          className={`mode-tab ${mode === 'check' ? 'active' : ''}`}
-          onClick={() => onModeChange('check')}
-        >
-          Check
-        </button>
-      </div>
+      {/* No mode tabs here — handled by top-level tabs in page.tsx */}
 
       {mode === 'check' && (
         <div className="check-intended-block">
@@ -107,7 +86,7 @@ export default function TranslateInput({
           {loading ? 'Working...' : btnLabel}
         </button>
         <button className="btn-clear" onClick={onClear}>Clear</button>
-        <span className="hint">Enter to submit · Shift+Enter for new line</span>
+        <span className="hint">Enter to submit \u00b7 Shift+Enter for new line</span>
       </div>
     </div>
   )
