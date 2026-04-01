@@ -1661,3 +1661,29 @@ html {
   .chat-messages { max-height: 380px; }
   .top-tab { font-size: 0.78rem; padding: 8px 10px; }
 }
+
+/* Inline copy button — sits next to each Japanese line */
+.japanese-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.inline-copy-btn {
+  background: transparent;
+  border: 1px solid #2a2a45;
+  color: #666;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.inline-copy-btn:hover {
+  border-color: #e84393;
+  color: #e84393;
+}

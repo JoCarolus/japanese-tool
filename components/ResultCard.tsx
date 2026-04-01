@@ -7,24 +7,23 @@ type Props = {
   result: TranslationResult
 }
 
-export default function ResultCard({ result }: Props) {
+function InlineCopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
-  const [copiedRomaji, setCopiedRomaji] = useState(false)
-  const [speaking, setSpeaking] = useState(false)
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(result.japanese_kanji).then(() => {
+  function handleCopy() {
+    navigator.clipboard.writeText(text).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     })
   }
+  return (
+    <button className="inline-copy-btn" onClick={handleCopy}>
+      {copied ? '✓' : 'Copy'}
+    </button>
+  )
+}
 
-  const handleCopyRomaji = () => {
-    navigator.clipboard.writeText(result.japanese_romaji).then(() => {
-      setCopiedRomaji(true)
-      setTimeout(() => setCopiedRomaji(false), 1500)
-    })
-  }
+export default function ResultCard({ result }: Props) {
+  const [speaking, setSpeaking] = useState(false)
 
   const handleSpeak = () => {
     if (!window.speechSynthesis) return
@@ -59,28 +58,39 @@ export default function ResultCard({ result }: Props) {
       <div className="result-section result-japanese">
         <div className="section-label">Japanese</div>
         <div className="japanese-block">
-          <div className="japanese-kanji">{result.japanese_kanji}</div>
+
+          {/* Kanji line */}
+          <div className="japanese-line">
+            <div className="japanese-kanji">{result.japanese_kanji}</div>
+            <InlineCopyButton text={result.japanese_kanji} />
+          </div>
+
+          {/* Kana line */}
           {result.japanese_kana && (
-            <div className="japanese-kana">Reading: {result.japanese_kana}</div>
+            <div className="japanese-line">
+              <div className="japanese-kana">Reading: {result.japanese_kana}</div>
+              <InlineCopyButton text={result.japanese_kana} />
+            </div>
           )}
+
+          {/* Romaji line */}
           {result.japanese_romaji && (
-            <div className="japanese-romaji">Romaji: {result.japanese_romaji}</div>
+            <div className="japanese-line">
+              <div className="japanese-romaji">Romaji: {result.japanese_romaji}</div>
+              <InlineCopyButton text={result.japanese_romaji} />
+            </div>
           )}
+
         </div>
-        <div className="btn-row">
-          <button className="copy-btn" onClick={handleCopy}>
-            {copied ? '✓ Copied!' : 'Copy Japanese'}
-          </button>
-          <button className="copy-btn" onClick={handleCopyRomaji}>
-            {copiedRomaji ? '✓ Copied!' : 'Copy Romaji'}
-          </button>
-          <button
-            className={`play-btn ${speaking ? 'playing' : ''}`}
-            onClick={speaking ? handleStop : handleSpeak}
-          >
-            {speaking ? '■ Stop' : '▶ Play Audio'}
-          </button>
-        </div>
+
+        {/* Audio button on its own line below */}
+        <button
+          className={`play-btn ${speaking ? 'playing' : ''}`}
+          style={{ marginTop: 12 }}
+          onClick={speaking ? handleStop : handleSpeak}
+        >
+          {speaking ? '■ Stop' : '▶ Play Audio'}
+        </button>
       </div>
 
       {/* Pronunciation */}
