@@ -1786,3 +1786,280 @@ html {
   letter-spacing: 1px;
   color: #e84393;
 }
+
+/* =====================
+   AUTH
+   ===================== */
+
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: #0f0f1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  z-index: 2000;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+}
+
+.auth-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #e84393, #9b1d6a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin: 0 auto 24px;
+}
+
+.auth-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.auth-title span {
+  color: #e84393;
+}
+
+.auth-subtitle {
+  color: #888;
+  font-size: 0.95rem;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.auth-label {
+  font-size: 0.85rem;
+  color: #aaa;
+  text-align: left;
+}
+
+.auth-input {
+  width: 100%;
+  background: #1a1a2e;
+  border: 1px solid #2a2a45;
+  border-radius: 10px;
+  color: #e8e8f0;
+  font-size: 1rem;
+  padding: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.auth-input:focus {
+  border-color: #e84393;
+}
+
+.auth-input::placeholder {
+  color: #444;
+}
+
+.auth-error {
+  font-size: 0.85rem;
+  color: #f48;
+  text-align: left;
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 14px;
+}
+
+.auth-skip {
+  background: transparent;
+  border: none;
+  color: #555;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color 0.2s;
+  text-decoration: underline;
+  margin-top: 8px;
+}
+
+.auth-skip:hover {
+  color: #aaa;
+}
+
+/* Sent state */
+.auth-sent {
+  padding: 24px;
+  background: #1a1a2e;
+  border: 1px solid #2a2a45;
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+
+.auth-sent-icon {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+}
+
+.auth-sent-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.auth-sent-text {
+  font-size: 0.9rem;
+  color: #aaa;
+  line-height: 1.6;
+}
+
+.auth-sent-text strong {
+  color: #e84393;
+}
+
+/* Header top row */
+.header-top {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.auth-signin-btn {
+  background: transparent;
+  border: 1px solid #2a2a45;
+  color: #888;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-signin-btn:hover {
+  border-color: #e84393;
+  color: #e84393;
+}
+
+/* User menu */
+.user-menu {
+  position: relative;
+}
+
+.user-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #1a1a2e;
+  border: 1px solid #2a2a45;
+  border-radius: 20px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  color: #e8e8f0;
+}
+
+.user-menu-btn:hover {
+  border-color: #e84393;
+}
+
+.user-menu-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e84393;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-menu-name {
+  font-size: 0.85rem;
+  color: #ccc;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-menu-caret {
+  font-size: 0.6rem;
+  color: #666;
+}
+
+.user-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  background: #1a1a2e;
+  border: 1px solid #2a2a45;
+  border-radius: 10px;
+  padding: 8px;
+  min-width: 200px;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.user-menu-email {
+  font-size: 0.8rem;
+  color: #666;
+  padding: 6px 8px;
+  border-bottom: 1px solid #2a2a45;
+  margin-bottom: 6px;
+  word-break: break-all;
+}
+
+.user-menu-signout {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #f48;
+  font-size: 0.85rem;
+  padding: 8px;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.user-menu-signout:hover {
+  background: rgba(255, 68, 136, 0.1);
+}
+
+/* History sign in prompt */
+.auth-history-prompt {
+  text-align: center;
+  padding: 24px;
+  margin-top: 16px;
+}
+
+.auth-history-prompt button {
+  background: transparent;
+  border: 1px dashed #2a2a45;
+  color: #666;
+  border-radius: 10px;
+  padding: 14px 24px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.auth-history-prompt button:hover {
+  border-color: #e84393;
+  color: #e84393;
+}

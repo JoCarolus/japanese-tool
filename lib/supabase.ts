@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 
 export type Translation = {
   id: string
+  user_id: string
   input_text: string
   direction: 'en-to-jp' | 'jp-to-en'
   english: string
