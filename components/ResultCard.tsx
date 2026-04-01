@@ -9,6 +9,7 @@ type Props = {
 
 export default function ResultCard({ result }: Props) {
   const [copied, setCopied] = useState(false)
+  const [copiedRomaji, setCopiedRomaji] = useState(false)
   const [speaking, setSpeaking] = useState(false)
 
   const handleCopy = () => {
@@ -64,17 +65,24 @@ export default function ResultCard({ result }: Props) {
           )}
         </div>
         <div className="btn-row">
-          <button className="copy-btn" onClick={handleCopy}>
-            {copied ? '✓ Copied!' : 'Copy Japanese'}
-          </button>
-          <button
-            className={`play-btn ${speaking ? 'playing' : ''}`}
-            onClick={speaking ? handleStop : handleSpeak}
-          >
-            {speaking ? '■ Stop' : '▶ Play Audio'}
-          </button>
-        </div>
-      </div>
+  <button className="copy-btn" onClick={handleCopy}>
+    {copied ? '✓ Copied!' : 'Copy Japanese'}
+  </button>
+  <button className="copy-btn" onClick={() => {
+    navigator.clipboard.writeText(result.japanese_romaji).then(() => {
+      setCopiedRomaji(true)
+      setTimeout(() => setCopiedRomaji(false), 1500)
+    })
+  }}>
+    {copiedRomaji ? '✓ Copied!' : 'Copy Romaji'}
+  </button>
+  <button
+    className={`play-btn ${speaking ? 'playing' : ''}`}
+    onClick={speaking ? handleStop : handleSpeak}
+  >
+    {speaking ? '■ Stop' : '▶ Play Audio'}
+  </button>
+</div>
 
       {/* Pronunciation — targeted by tour */}
       {(result.syllable_breakdown || result.pitch_accent || result.pronunciation_tips) && (
