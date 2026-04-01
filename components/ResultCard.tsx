@@ -19,22 +19,25 @@ export default function ResultCard({ result }: Props) {
     })
   }
 
+  const handleCopyRomaji = () => {
+    navigator.clipboard.writeText(result.japanese_romaji).then(() => {
+      setCopiedRomaji(true)
+      setTimeout(() => setCopiedRomaji(false), 1500)
+    })
+  }
+
   const handleSpeak = () => {
     if (!window.speechSynthesis) return
     window.speechSynthesis.cancel()
-
     const utterance = new SpeechSynthesisUtterance(result.japanese_kanji)
     utterance.lang = 'ja-JP'
     utterance.rate = 0.85
-
     const voices = window.speechSynthesis.getVoices()
     const japaneseVoice = voices.find(v => v.lang.startsWith('ja'))
     if (japaneseVoice) utterance.voice = japaneseVoice
-
     utterance.onstart = () => setSpeaking(true)
     utterance.onend = () => setSpeaking(false)
     utterance.onerror = () => setSpeaking(false)
-
     window.speechSynthesis.speak(utterance)
   }
 
@@ -52,7 +55,7 @@ export default function ResultCard({ result }: Props) {
         <div className="english-text">{result.english}</div>
       </div>
 
-      {/* Japanese — targeted by tour */}
+      {/* Japanese */}
       <div className="result-section result-japanese">
         <div className="section-label">Japanese</div>
         <div className="japanese-block">
@@ -65,44 +68,37 @@ export default function ResultCard({ result }: Props) {
           )}
         </div>
         <div className="btn-row">
-  <button className="copy-btn" onClick={handleCopy}>
-    {copied ? '✓ Copied!' : 'Copy Japanese'}
-  </button>
-  <button className="copy-btn" onClick={() => {
-    navigator.clipboard.writeText(result.japanese_romaji).then(() => {
-      setCopiedRomaji(true)
-      setTimeout(() => setCopiedRomaji(false), 1500)
-    })
-  }}>
-    {copiedRomaji ? '✓ Copied!' : 'Copy Romaji'}
-  </button>
-  <button
-    className={`play-btn ${speaking ? 'playing' : ''}`}
-    onClick={speaking ? handleStop : handleSpeak}
-  >
-    {speaking ? '■ Stop' : '▶ Play Audio'}
-  </button>
-</div>
+          <button className="copy-btn" onClick={handleCopy}>
+            {copied ? '✓ Copied!' : 'Copy Japanese'}
+          </button>
+          <button className="copy-btn" onClick={handleCopyRomaji}>
+            {copiedRomaji ? '✓ Copied!' : 'Copy Romaji'}
+          </button>
+          <button
+            className={`play-btn ${speaking ? 'playing' : ''}`}
+            onClick={speaking ? handleStop : handleSpeak}
+          >
+            {speaking ? '■ Stop' : '▶ Play Audio'}
+          </button>
+        </div>
+      </div>
 
-      {/* Pronunciation — targeted by tour */}
+      {/* Pronunciation */}
       {(result.syllable_breakdown || result.pitch_accent || result.pronunciation_tips) && (
         <div className="result-section result-pronunciation">
           <div className="section-label">Pronunciation</div>
-
           {result.syllable_breakdown && (
             <div className="pronunciation-block">
               <div className="pronunciation-label">Syllable breakdown</div>
               <div className="syllable-text">{result.syllable_breakdown}</div>
             </div>
           )}
-
           {result.pitch_accent && (
             <div className="pronunciation-block">
               <div className="pronunciation-label">Pitch accent</div>
               <div className="structure-content">{result.pitch_accent}</div>
             </div>
           )}
-
           {result.pronunciation_tips && (
             <div className="pronunciation-block">
               <div className="pronunciation-label">Tips for English speakers</div>
@@ -112,7 +108,7 @@ export default function ResultCard({ result }: Props) {
         </div>
       )}
 
-      {/* Word Breakdown — targeted by tour */}
+      {/* Word Breakdown */}
       {result.breakdown?.length > 0 && (
         <div className="result-section result-breakdown">
           <div className="section-label">Word Breakdown</div>
@@ -139,7 +135,7 @@ export default function ResultCard({ result }: Props) {
         </div>
       )}
 
-      {/* Sentence Structure — targeted by tour */}
+      {/* Sentence Structure */}
       {result.structure && (
         <div className="result-section result-structure">
           <div className="section-label">Sentence Structure</div>
@@ -150,7 +146,7 @@ export default function ResultCard({ result }: Props) {
         </div>
       )}
 
-      {/* Usage Tips — targeted by tour */}
+      {/* Usage Tips */}
       {result.tips && (
         <div className="result-section result-tips">
           <div className="section-label">Usage Tips</div>
