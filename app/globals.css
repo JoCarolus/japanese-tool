@@ -1687,3 +1687,102 @@ html {
   border-color: #e84393;
   color: #e84393;
 }
+
+/* =====================
+   MIC BUTTON
+   ===================== */
+
+.input-with-mic {
+  position: relative;
+  width: 100%;
+}
+
+.input-with-mic textarea {
+  width: 100%;
+  padding-right: 48px;
+}
+
+.mic-btn-wrapper {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+}
+
+.mic-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #2a2a45;
+  background: #1a1a2e;
+  color: #888;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.mic-btn:hover {
+  border-color: #e84393;
+  color: #e84393;
+}
+
+.mic-btn.listening {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  animation: mic-pulse 1.5s infinite;
+}
+
+@keyframes mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+/* Animated wave bars when listening */
+.mic-wave {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 14px;
+}
+
+.mic-wave span {
+  display: block;
+  width: 3px;
+  background: #ef4444;
+  border-radius: 2px;
+  animation: mic-wave-bar 0.8s infinite ease-in-out;
+}
+
+.mic-wave span:nth-child(1) {
+  height: 6px;
+  animation-delay: 0s;
+}
+
+.mic-wave span:nth-child(2) {
+  height: 14px;
+  animation-delay: 0.15s;
+}
+
+.mic-wave span:nth-child(3) {
+  height: 6px;
+  animation-delay: 0.3s;
+}
+
+@keyframes mic-wave-bar {
+  0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+
+.mic-btn.converting {
+  border-color: #e84393;
+  color: #e84393;
+}
+
+.mic-converting {
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  color: #e84393;
+}

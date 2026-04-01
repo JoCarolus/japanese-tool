@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import MicButton from '@/components/MicButton'
 
 const TOPICS = [
   { id: 'greetings', label: 'Greetings', emoji: '👋', description: 'Hello, goodbye, how are you' },
@@ -82,6 +83,7 @@ export default function ConversationMode() {
   const [selectedLength, setSelectedLength] = useState<typeof LENGTH_OPTIONS[0] | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
+  const [japaneseInput, setJapaneseInput] = useState('') // Japanese-only for sending
   const [loading, setLoading] = useState(false)
   const [exchangeCount, setExchangeCount] = useState(0)
   const [summary, setSummary] = useState<Summary | null>(null)
@@ -121,20 +123,24 @@ export default function ConversationMode() {
   }
 
   async function sendMessage() {
-    const trimmed = input.trim()
-    if (!trimmed || loading) return
+    // Use japanese-only version for sending if available (from mic input)
+    // otherwise use the raw input (typed Japanese)
+    const displayText = input.trim()
+    const sendText = japaneseInput.trim() || displayText
+    if (!displayText || loading) return
 
     const userMsg: Message = {
       role: 'user',
-      japanese: trimmed,
+      japanese: displayText,
       romaji: '',
       english: '',
     }
     setMessages(prev => [...prev, userMsg])
     setInput('')
+    setJapaneseInput('')
     setLoading(true)
 
-    chatHistory.current.push({ role: 'user', content: trimmed })
+    chatHistory.current.push({ role: 'user', content: sendText })
 
     try {
       const res = await fetch('/api/converse', {
@@ -143,7 +149,7 @@ export default function ConversationMode() {
         body: JSON.stringify({
           topic: selectedTopic?.label,
           history: chatHistory.current.slice(-10),
-          userMessage: trimmed,
+          userMessage: sendText,
         }),
       })
       const data = await res.json()
@@ -213,6 +219,7 @@ export default function ConversationMode() {
     setSelectedLength(null)
     setMessages([])
     setInput('')
+    setJapaneseInput('')
     setExchangeCount(0)
     setSummary(null)
     setCorrections([])
@@ -421,15 +428,26 @@ export default function ConversationMode() {
       </div>
 
       <div className="chat-input-row">
-        <textarea
-          className="chat-input"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type your Japanese reply... (Enter to send, Shift+Enter for new line)"
-          rows={2}
-          disabled={loading}
-        />
+        <div className="input-with-mic">
+          <textarea
+            className="chat-input"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type or speak your Japanese reply... (Enter to send)"
+            rows={2}
+            disabled={loading}
+          />
+          <div className="mic-btn-wrapper">
+            <MicButton
+              onResult={(displayText, japaneseOnly) => {
+                setInput(prev => prev ? prev + ' ' + displayText : displayText)
+                setJapaneseInput(prev => prev ? prev + ' ' + japaneseOnly : japaneseOnly)
+              }}
+              language="ja-JP"
+            />
+          </div>
+        </div>
         <button
           className="chat-send-btn"
           onClick={sendMessage}
