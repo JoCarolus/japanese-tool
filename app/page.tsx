@@ -54,7 +54,6 @@ export default function Home() {
   const [showAuth, setShowAuth] = useState(false)
   const [showPinPrompt, setShowPinPrompt] = useState(false)
 
-  // Init theme and language from localStorage
   useEffect(() => {
     const savedTheme = (localStorage.getItem(THEME_KEY) as 'light' | 'dark') ||
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
@@ -65,29 +64,34 @@ export default function Home() {
     if (savedLang) setLanguage(savedLang)
   }, [])
 
-  // Auth check
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    async function checkAuth() {
+      await new Promise(resolve => setTimeout(resolve, 150))
+
+      const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         setAuthUser(session.user)
         setAuthChecked(true)
-      } else {
-        // Check for PIN session
-        const pinUserId = localStorage.getItem('pin_user_id')
-        if (pinUserId) {
-          setAuthUser({ id: pinUserId, email: 'PIN user', isPinUser: true })
-          setAuthChecked(true)
-        } else {
-          setAuthChecked(true)
-          const skipped = localStorage.getItem(SKIP_AUTH_KEY)
-          if (!skipped && language) setShowAuth(true)
-        }
+        return
       }
-    })
+
+      const pinUserId = localStorage.getItem('pin_user_id')
+      if (pinUserId) {
+        setAuthUser({ id: pinUserId, email: 'PIN user', isPinUser: true })
+        setAuthChecked(true)
+        return
+      }
+
+      setAuthChecked(true)
+      const skipped = localStorage.getItem(SKIP_AUTH_KEY)
+      if (!skipped && language) setShowAuth(true)
+    }
+
+    checkAuth()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthUser(session?.user ?? null)
       if (session?.user) {
+        setAuthUser(session.user)
         setShowAuth(false)
         if (language) loadHistory(session.user.id, language)
         if (shouldShowPinPrompt()) setShowPinPrompt(true)
@@ -97,7 +101,6 @@ export default function Home() {
     return () => subscription.unsubscribe()
   }, [language])
 
-  // Load history and tour after auth check
   useEffect(() => {
     if (!authChecked || !language) return
     if (authUser) loadHistory(authUser.id, language)
@@ -139,12 +142,14 @@ export default function Home() {
   }
 
   function handlePinLogin(userId: string) {
+    const pinUser = { id: userId, email: 'PIN user', isPinUser: true }
+    setAuthUser(pinUser)
     setShowAuth(false)
-    // Load history using userId directly since no Supabase session
     if (language) loadHistory(userId, language)
   }
 
   function handleSignOut() {
+    localStorage.removeItem('pin_user_id')
     setAuthUser(null)
     setHistory([])
   }
@@ -244,9 +249,7 @@ export default function Home() {
   }
 
   const langName = language ? LANG_NAMES[language] : ''
-  const langScript = language ? LANG_SCRIPTS[language] : ''
 
-  // Show language selection if none chosen
   if (!language) {
     return (
       <LanguageSelect
@@ -257,10 +260,8 @@ export default function Home() {
     )
   }
 
-  // Show auth screen
   if (showAuth) return <AuthScreen onSkip={handleSkipAuth} onPinLogin={handlePinLogin} />
 
-  // Wait for auth check
   if (!authChecked) return null
 
   return (

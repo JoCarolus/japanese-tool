@@ -18,17 +18,20 @@ export default function AuthScreen({ onSkip, onPinLogin }: Props) {
   const [error, setError] = useState('')
   const [hasPins, setHasPins] = useState(false)
 
-  // Check if any PINs exist on load
   useEffect(() => {
     async function check() {
-      const res = await fetch('/api/pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'check' }),
-      })
-      const data = await res.json()
-      setHasPins(data.hasPins)
-      setMode(data.hasPins ? 'pin' : 'magic')
+      try {
+        const res = await fetch('/api/pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'check' }),
+        })
+        const data = await res.json()
+        setHasPins(data.hasPins)
+        setMode(data.hasPins ? 'pin' : 'magic')
+      } catch {
+        setMode('magic')
+      }
     }
     check()
   }, [])
@@ -55,17 +58,31 @@ export default function AuthScreen({ onSkip, onPinLogin }: Props) {
     if (pin.length !== 4) return
     setLoading(true)
     setError('')
-    const res = await fetch('/api/pin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'verify', pin }),
-    })
-    const data = await res.json()
-    if (data.success) {
-      localStorage.setItem('pin_user_id', data.userId)
-      onPinLogin?.(data.userId)
-    } else {
-      setError('Incorrect PIN. Please try again.')
+    try {
+      const res = await fetch('/api/pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', pin }),
+      })
+      const data = await res.json()
+      if (data.success && data.userId) {
+        localStorage.setItem('pin_user_id', data.userId)
+        await new Promise(resolve => setTimeout(resolve, 100))
+        const saved = localStorage.getItem('pin_user_id')
+        if (saved === data.userId) {
+          onPinLogin?.(data.userId)
+        } else {
+          setError('Could not save session. Please try again.')
+          setPin('')
+          setLoading(false)
+        }
+      } else {
+        setError('Incorrect PIN. Please try again.')
+        setPin('')
+        setLoading(false)
+      }
+    } catch {
+      setError('Something went wrong. Please try again.')
       setPin('')
       setLoading(false)
     }
@@ -91,7 +108,7 @@ export default function AuthScreen({ onSkip, onPinLogin }: Props) {
   return (
     <div className="auth-overlay">
       <div className="auth-card">
-        <div className="auth-icon">🌏</div>
+        <div className="auth-icon">🌐</div>
         <h1 className="auth-title">Tri<span>lingo</span></h1>
         <p className="auth-subtitle">Learn Japanese, Korean, and Chinese.</p>
 
