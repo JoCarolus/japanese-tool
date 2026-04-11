@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useRef, useEffect } from 'react'
 import MicButton from '@/components/MicButton'
@@ -77,7 +77,7 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
-export default function ConversationMode() {
+export default function ConversationMode({ language = 'japanese' }: { language?: string }) {
   const [stage, setStage] = useState<'topic' | 'length' | 'chat' | 'summary'>('topic')
   const [selectedTopic, setSelectedTopic] = useState<typeof TOPICS[0] | null>(null)
   const [selectedLength, setSelectedLength] = useState<typeof LENGTH_OPTIONS[0] | null>(null)
@@ -103,7 +103,7 @@ export default function ConversationMode() {
       const res = await fetch('/api/converse-start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: selectedTopic.label }),
+        body: JSON.stringify({ topic: selectedTopic.label, language }),
       })
       const data = await res.json()
       const botMsg: Message = {
@@ -150,6 +150,7 @@ export default function ConversationMode() {
           topic: selectedTopic?.label,
           history: chatHistory.current.slice(-10),
           userMessage: sendText,
+          language,
         }),
       })
       const data = await res.json()
@@ -434,7 +435,7 @@ export default function ConversationMode() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type or speak your Japanese reply... (Enter to send)"
+            placeholder={`Type or speak your ${language} reply... (Enter to send)`}
             rows={2}
             disabled={loading}
           />
@@ -444,7 +445,7 @@ export default function ConversationMode() {
                 setInput(prev => prev ? prev + ' ' + displayText : displayText)
                 setJapaneseInput(prev => prev ? prev + ' ' + japaneseOnly : japaneseOnly)
               }}
-              language="ja-JP"
+              language={language === 'korean' ? 'ko-KR' : language === 'chinese' ? 'zh-CN' : 'ja-JP'}
             />
           </div>
         </div>

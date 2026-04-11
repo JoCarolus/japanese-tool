@@ -1,4 +1,4 @@
-﻿﻿'use client'
+'use client'
 
 import { useState, useEffect } from 'react'
 import { supabase, Translation, TranslationResult } from '@/lib/supabase'
@@ -9,18 +9,38 @@ import CheckResultCard from '@/components/CheckResultCard'
 import HistoryList from '@/components/HistoryList'
 import TutorialTour from '@/components/TutorialTour'
 import ConversationMode from '@/components/ConversationMode'
+import AlphabetSection from '@/components/AlphabetSection'
 import AuthScreen from '@/components/AuthScreen'
 import UserMenu from '@/components/UserMenu'
+import LanguageSelect from '@/components/LanguageSelect'
+import ThemeToggle from '@/components/ThemeToggle'
 
-const TOUR_KEY = 'japanese-tool-tour-done'
-const SKIP_AUTH_KEY = 'japanese-tool-skip-auth'
+const TOUR_KEY = 'language-tool-tour-done'
+const SKIP_AUTH_KEY = 'language-tool-skip-auth'
+const LANG_KEY = 'language-tool-last-lang'
+const THEME_KEY = 'language-tool-theme'
 
-type Mode = 'en-to-jp' | 'jp-to-en' | 'check' | 'converse'
+type Language = 'japanese' | 'korean' | 'chinese'
+type Mode = 'en-to-lang' | 'lang-to-en' | 'check' | 'converse' | 'alphabet'
+
+const LANG_NAMES: Record<Language, string> = {
+  japanese: 'Japanese',
+  korean: 'Korean',
+  chinese: 'Chinese',
+}
+
+const LANG_SCRIPTS: Record<Language, string> = {
+  japanese: '\u65e5\u672c\u8a9e',
+  korean: '\ud55c\uad6d\uc5b4',
+  chinese: '\u4e2d\u6587',
+}
 
 export default function Home() {
+  const [language, setLanguage] = useState<Language | null>(null)
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [mode, setMode] = useState<Mode>('en-to-lang')
   const [input, setInput] = useState('')
   const [intended, setIntended] = useState('')
-  const [mode, setMode] = useState<Mode>('en-to-jp')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<TranslationResult | null>(null)
   const [checkResult, setCheckResult] = useState<any | null>(null)
@@ -28,46 +48,50 @@ export default function Home() {
   const [history, setHistory] = useState<Translation[]>([])
   const [showTour, setShowTour] = useState(false)
   const [isMockResult, setIsMockResult] = useState(false)
-
-  // Auth state
   const [authUser, setAuthUser] = useState<any | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
   const [showAuth, setShowAuth] = useState(false)
 
-  // Check auth on mount
+  // Init theme and language from localStorage
+  useEffect(() => {
+    const savedTheme = (localStorage.getItem(THEME_KEY) as 'light' | 'dark') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    setTheme(savedTheme)
+    document.documentElement.setAttribute('data-theme', savedTheme)
+
+    const savedLang = localStorage.getItem(LANG_KEY) as Language | null
+    if (savedLang) setLanguage(savedLang)
+  }, [])
+
+  // Auth check
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAuthUser(session?.user ?? null)
       setAuthChecked(true)
-
       if (!session?.user) {
         const skipped = localStorage.getItem(SKIP_AUTH_KEY)
-        if (!skipped) setShowAuth(true)
+        if (!skipped && language) setShowAuth(true)
       }
     })
 
-    // Listen for auth changes (magic link click)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setAuthUser(session?.user ?? null)
-        if (session?.user) {
-          setShowAuth(false)
-          loadHistory(session.user.id)
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user ?? null)
+      if (session?.user) {
+        setShowAuth(false)
+        if (language) loadHistory(session.user.id, language)
       }
-    )
+    })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [language])
 
   // Load history and tour after auth check
   useEffect(() => {
-    if (!authChecked) return
-
-    if (authUser) loadHistory(authUser.id)
+    if (!authChecked || !language) return
+    if (authUser) loadHistory(authUser.id, language)
 
     const tourDone = localStorage.getItem(TOUR_KEY)
-    if (!tourDone) {
+    if (!tourDone && mode !== 'alphabet' && mode !== 'converse') {
       setTimeout(() => {
         setInput('Hello')
         setResult(HELLO_MOCK)
@@ -75,7 +99,27 @@ export default function Home() {
         setShowTour(true)
       }, 600)
     }
-  }, [authChecked, authUser])
+  }, [authChecked, authUser, language])
+
+  function toggleTheme() {
+    const next = theme === 'light' ? 'dark' : 'light'
+    setTheme(next)
+    document.documentElement.setAttribute('data-theme', next)
+    localStorage.setItem(THEME_KEY, next)
+  }
+
+  function handleSelectLanguage(lang: Language) {
+    setLanguage(lang)
+    localStorage.setItem(LANG_KEY, lang)
+    setMode('en-to-lang')
+    setResult(null)
+    setCheckResult(null)
+    setInput('')
+    setIntended('')
+    setHistory([])
+    if (authUser) loadHistory(authUser.id, lang)
+    if (!authUser && !localStorage.getItem(SKIP_AUTH_KEY)) setShowAuth(true)
+  }
 
   function handleSkipAuth() {
     localStorage.setItem(SKIP_AUTH_KEY, 'true')
@@ -105,11 +149,12 @@ export default function Home() {
     setIsMockResult(false)
   }
 
-  async function loadHistory(userId: string) {
+  async function loadHistory(userId: string, lang: Language) {
     const { data, error } = await supabase
       .from('translations')
       .select('*')
       .eq('user_id', userId)
+      .eq('language', lang)
       .order('created_at', { ascending: false })
       .limit(20)
     if (!error && data) setHistory(data as Translation[])
@@ -117,7 +162,7 @@ export default function Home() {
 
   async function handleSubmit() {
     const trimmed = input.trim()
-    if (!trimmed) return
+    if (!trimmed || !language) return
     setLoading(true)
     setError('')
     setResult(null)
@@ -129,7 +174,7 @@ export default function Home() {
         const res = await fetch('/api/check', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ attempt: trimmed, intended: intended.trim() }),
+          body: JSON.stringify({ attempt: trimmed, intended: intended.trim(), language }),
         })
         if (!res.ok) throw new Error('Check failed')
         setCheckResult(await res.json())
@@ -137,21 +182,21 @@ export default function Home() {
         const res = await fetch('/api/translate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input: trimmed, direction: mode }),
+          body: JSON.stringify({ input: trimmed, direction: mode, language }),
         })
         if (!res.ok) throw new Error('Translation failed')
         const data: TranslationResult = await res.json()
         setResult(data)
 
-        // Only save if logged in
         if (authUser) {
           const { error: dbError } = await supabase.from('translations').insert({
             input_text: trimmed,
             direction: mode,
             user_id: authUser.id,
+            language,
             ...data,
           })
-          if (!dbError) loadHistory(authUser.id)
+          if (!dbError) loadHistory(authUser.id, language)
         }
       }
     } catch {
@@ -171,20 +216,33 @@ export default function Home() {
   }
 
   async function handleClearHistory() {
-    if (!authUser) return
+    if (!authUser || !language) return
     const { error } = await supabase
       .from('translations')
       .delete()
       .eq('user_id', authUser.id)
+      .eq('language', language)
     if (!error) setHistory([])
   }
 
-  // Show auth screen first if needed
-  if (showAuth) {
-    return <AuthScreen onSkip={handleSkipAuth} />
+  const langName = language ? LANG_NAMES[language] : ''
+  const langScript = language ? LANG_SCRIPTS[language] : ''
+
+  // Show language selection if none chosen
+  if (!language) {
+    return (
+      <LanguageSelect
+        onSelect={handleSelectLanguage}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
+    )
   }
 
-  // Wait for auth check before rendering
+  // Show auth screen
+  if (showAuth) return <AuthScreen onSkip={handleSkipAuth} />
+
+  // Wait for auth check
   if (!authChecked) return null
 
   return (
@@ -193,42 +251,52 @@ export default function Home() {
 
         <header className="header">
           <div className="header-top">
-            <div />
-            {authUser ? (
-              <UserMenu email={authUser.email} onSignOut={handleSignOut} />
-            ) : (
-              <button className="auth-signin-btn" onClick={() => setShowAuth(true)}>
-                Sign in
-              </button>
-            )}
+            <button className="switch-lang-btn" onClick={() => setLanguage(null)}>
+              \u2190 Languages
+            </button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <ThemeToggle theme={theme} onToggle={toggleTheme} />
+              {authUser ? (
+                <UserMenu email={authUser.email} onSignOut={handleSignOut} />
+              ) : (
+                <button className="auth-signin-btn" onClick={() => setShowAuth(true)}>
+                  Sign in
+                </button>
+              )}
+            </div>
           </div>
-          <h1>&#26085;&#26412;&#35486; <span>Learn Japanese</span></h1>
-          <p>Translate, check your writing, or have a practice conversation.</p>
+          <h1>{langScript} <span>Learn {langName}</span></h1>
+          <p>Translate, check your writing, practise conversations, and learn the alphabet.</p>
         </header>
 
         <div className="top-tabs">
-          {(['en-to-jp', 'jp-to-en', 'check', 'converse'] as Mode[]).map(m => (
+          {([
+            ['en-to-lang', `EN \u2192 ${langName.slice(0, 2)}`],
+            ['lang-to-en', `${langName.slice(0, 2)} \u2192 EN`],
+            ['check', 'Check'],
+            ['converse', '\u{1F4AC} Converse'],
+            ['alphabet', '\u{1F524} Alphabet'],
+          ] as [Mode, string][]).map(([m, label]) => (
             <button
               key={m}
               className={`top-tab ${mode === m ? 'active' : ''}`}
               onClick={() => handleModeChange(m)}
             >
-              {m === 'en-to-jp' && 'EN \u2192 JP'}
-              {m === 'jp-to-en' && 'JP \u2192 EN'}
-              {m === 'check' && 'Check'}
-              {m === 'converse' && '\u{1F4AC} Converse'}
+              {label}
             </button>
           ))}
         </div>
 
-        {mode === 'converse' ? (
-          <ConversationMode />
-        ) : (
+        {mode === 'converse' && <ConversationMode language={language} />}
+        {mode === 'alphabet' && <AlphabetSection language={language} />}
+
+        {mode !== 'converse' && mode !== 'alphabet' && (
           <>
             <TranslateInput
               input={input}
               intended={intended}
-              mode={mode as 'en-to-jp' | 'jp-to-en' | 'check'}
+              mode={mode as 'en-to-lang' | 'lang-to-en' | 'check'}
+              language={language}
               loading={loading}
               onInputChange={setInput}
               onIntendedChange={setIntended}
@@ -242,7 +310,7 @@ export default function Home() {
             {loading && (
               <div className="loading">
                 <div className="dots"><span></span><span></span><span></span></div>
-                <p>{mode === 'check' ? 'Checking your Japanese...' : 'Translating...'}</p>
+                <p>{mode === 'check' ? 'Checking your writing...' : 'Translating...'}</p>
               </div>
             )}
 
@@ -266,13 +334,11 @@ export default function Home() {
                 onClear={handleClearHistory}
               />
             ) : (
-              history.length === 0 && (
-                <div className="auth-history-prompt">
-                  <button onClick={() => setShowAuth(true)}>
-                    Sign in to save your translation history
-                  </button>
-                </div>
-              )
+              <div className="auth-history-prompt">
+                <button onClick={() => setShowAuth(true)}>
+                  Sign in to save your {langName} translation history
+                </button>
+              </div>
             )}
           </>
         )}

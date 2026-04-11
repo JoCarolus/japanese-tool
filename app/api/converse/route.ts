@@ -1,16 +1,20 @@
-﻿import Anthropic from '@anthropic-ai/sdk'
+import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 
 const client = new Anthropic()
 
 export async function POST(req: NextRequest) {
   try {
-    const { topic, history, userMessage } = await req.json()
+    const { topic, history, userMessage, language = 'japanese' } = await req.json()
 
-    const systemPrompt = `You are a friendly Japanese conversation partner helping a beginner practise Japanese.
+    const langName = language.charAt(0).toUpperCase() + language.slice(1)
+    const langCode = language === 'japanese' ? 'ja-JP' : language === 'korean' ? 'ko-KR' : 'zh-CN'
+
+    const systemPrompt = `You are a friendly ${langName} conversation partner helping a beginner practise ${langName}.
 Have a natural conversation about: ${topic}.
-Keep your Japanese simple — short sentences, beginner vocabulary.
-You MUST respond with ONLY a valid JSON object. No extra text, no markdown, no commentary outside the JSON.`
+Keep your ${langName} simple — short sentences, beginner vocabulary.
+You MUST respond with ONLY a valid JSON object. No extra text, no markdown, no commentary outside the JSON.
+The JSON must have: japanese (the ${langName} text in native script), romaji (romanised pronunciation), english (direct translation only).`
 
     const conversationMessages = [
       ...history,
@@ -26,7 +30,6 @@ You MUST respond with ONLY a valid JSON object. No extra text, no markdown, no c
 
     const raw = message.content[0].type === 'text' ? message.content[0].text : ''
 
-    // Check if response is already JSON (new prompt enforcement)
     let japanese = '', romaji = '', english = ''
     try {
       const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
@@ -34,21 +37,20 @@ You MUST respond with ONLY a valid JSON object. No extra text, no markdown, no c
       romaji = parsed.romaji || ''
       english = parsed.english || ''
     } catch {
-      // Fallback: ask again with explicit JSON instruction
       const retryMsg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 600,
         messages: [{
           role: 'user',
-          content: `You are a Japanese conversation partner. The topic is: ${topic}.
-The conversation so far: ${JSON.stringify(history)}
-The student said: "${userMessage}"
+          content: `You are a ${langName} conversation partner. Topic: ${topic}.
+History: ${JSON.stringify(history)}
+Student said: "${userMessage}"
 
-Respond ONLY with this exact JSON object, nothing else:
+Respond ONLY with this exact JSON:
 {
-  "japanese": "your reply in Japanese (kanji/kana only, no romaji, no English mixed in)",
-  "romaji": "romaji pronunciation of your Japanese reply",
-  "english": "direct English translation of your Japanese reply only — nothing extra"
+  "japanese": "your reply in ${langName} native script only",
+  "romaji": "romanised pronunciation of your reply",
+  "english": "direct English translation of your reply only"
 }`
         }]
       })
@@ -65,23 +67,22 @@ Respond ONLY with this exact JSON object, nothing else:
       }
     }
 
-    // Get correction for user message if it contains Japanese characters
     let correction = null
-    const hasJapanese = /[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]/.test(userMessage)
-    if (hasJapanese) {
+    const hasScript = /[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff\uac00-\ud7af]/.test(userMessage)
+    if (hasScript) {
       const correctionMsg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 300,
         messages: [{
           role: 'user',
-          content: `A Japanese beginner wrote: "${userMessage}"
-          
-Respond ONLY with valid JSON, no markdown, no extra text:
+          content: `A ${langName} beginner wrote: "${userMessage}"
+
+Respond ONLY with valid JSON:
 {
   "is_correct": true or false,
   "confidence_score": 0-100,
   "confidence_label": "Perfect, Almost there, Good start, Needs work, or Not quite",
-  "corrected": "corrected Japanese if needed — same as input if correct",
+  "corrected": "corrected ${langName} if needed — same as input if correct",
   "tip": "one short friendly tip in plain English, max 1 sentence. null if perfect."
 }`
         }]

@@ -1,13 +1,14 @@
-﻿'use client'
+'use client'
 
 import MicButton from '@/components/MicButton'
 
-type Mode = 'en-to-jp' | 'jp-to-en' | 'check'
+type Mode = 'en-to-lang' | 'lang-to-en' | 'check'
 
 type Props = {
   input: string
   intended: string
   mode: Mode
+  language: string
   loading: boolean
   onInputChange: (val: string) => void
   onIntendedChange: (val: string) => void
@@ -16,8 +17,14 @@ type Props = {
   onClear: () => void
 }
 
+const LANG_CODES: Record<string, string> = {
+  japanese: 'ja-JP',
+  korean: 'ko-KR',
+  chinese: 'zh-CN',
+}
+
 export default function TranslateInput({
-  input, intended, mode, loading,
+  input, intended, mode, language, loading,
   onInputChange, onIntendedChange, onTranslate, onClear,
 }: Props) {
 
@@ -29,21 +36,20 @@ export default function TranslateInput({
   }
 
   const placeholder =
-    mode === 'en-to-jp' ? 'Type an English word, phrase, or sentence...' :
-    mode === 'jp-to-en' ? 'Type or speak Japanese to translate...' :
-    'Type or speak your Japanese attempt here...'
+    mode === 'en-to-lang' ? 'Type an English word, phrase, or sentence...' :
+    mode === 'lang-to-en' ? 'Type or speak to translate...' :
+    'Type or speak your attempt here...'
 
-  const btnLabel = mode === 'check' ? 'Check my Japanese' : 'Translate'
-  const showMic = mode === 'jp-to-en' || mode === 'check'
+  const btnLabel = mode === 'check' ? 'Check my writing' : 'Translate'
+  const showMic = mode === 'lang-to-en' || mode === 'check'
+  const micLang = LANG_CODES[language] || 'ja-JP'
 
-  function handleMicResult(displayText: string, _japaneseOnly: string) {
+  function handleMicResult(displayText: string) {
     onInputChange(displayText)
   }
 
   return (
     <div className="input-area">
-      {/* No mode tabs here — handled by top-level tabs in page.tsx */}
-
       {mode === 'check' && (
         <div className="check-intended-block">
           <label className="check-intended-label">
@@ -70,19 +76,15 @@ export default function TranslateInput({
         {showMic && (
           <div className="mic-btn-wrapper">
             <MicButton
-              onResult={handleMicResult}
-              language="ja-JP"
+              onResult={(displayText) => handleMicResult(displayText)}
+              language={micLang}
             />
           </div>
         )}
       </div>
 
       <div className="controls">
-        <button
-          className="btn-translate"
-          onClick={onTranslate}
-          disabled={loading}
-        >
+        <button className="btn-translate" onClick={onTranslate} disabled={loading}>
           {loading ? 'Working...' : btnLabel}
         </button>
         <button className="btn-clear" onClick={onClear}>Clear</button>
