@@ -24,7 +24,11 @@ export default function LanguageSelect({ onSelect, theme, onToggleTheme }: Props
       </div>
 
       <div className="lang-select-header">
-        <div className="lang-select-logo">🌏</div>
+        <img
+          src="/icon-512.png"
+          alt="Trilingo"
+          className="lang-select-logo-img"
+        />
         <h1 className="lang-select-title">
           Tri<span>lingo</span>
         </h1>

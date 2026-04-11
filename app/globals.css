@@ -1782,3 +1782,137 @@ textarea::placeholder { color: var(--text-placeholder); }
   .alpha-card-char { font-size: 1.3rem; }
   .alpha-card.open { grid-column: span 2; }
 }
+
+/* =====================
+   AUDIO UNLOCK
+   ===================== */
+
+.audio-unlock-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 3000;
+}
+
+.audio-unlock-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+}
+
+.audio-unlock-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.audio-unlock-text {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* =====================
+   PIN LOGIN
+   ===================== */
+
+.pin-input-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 8px 0 16px;
+}
+
+.pin-digit {
+  width: 56px;
+  height: 64px;
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: var(--bg-input);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.pin-digit::-webkit-outer-spin-button,
+.pin-digit::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 0 auto 16px;
+  max-width: 280px;
+}
+
+.pin-key {
+  height: 56px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pin-key:hover:not(:disabled) {
+  background: var(--bg-card-hover);
+  border-color: var(--accent);
+}
+
+.pin-key:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.pin-key-empty {
+  background: transparent;
+  border-color: transparent;
+  cursor: default;
+}
+
+.pin-key-empty:hover {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.user-menu-action {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  padding: 8px;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.user-menu-action:hover {
+  background: var(--bg-card-hover);
+}
+
+/* Favicon logo on language select screen */
+.lang-select-logo-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 18px;
+  margin: 0 auto 16px;
+  display: block;
+}

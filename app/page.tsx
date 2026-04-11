@@ -14,6 +14,7 @@ import AuthScreen from '@/components/AuthScreen'
 import UserMenu from '@/components/UserMenu'
 import LanguageSelect from '@/components/LanguageSelect'
 import ThemeToggle from '@/components/ThemeToggle'
+import PinPrompt, { shouldShowPinPrompt } from '@/components/PinPrompt'
 
 const TOUR_KEY = 'language-tool-tour-done'
 const SKIP_AUTH_KEY = 'language-tool-skip-auth'
@@ -51,6 +52,7 @@ export default function Home() {
   const [authUser, setAuthUser] = useState<any | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
   const [showAuth, setShowAuth] = useState(false)
+  const [showPinPrompt, setShowPinPrompt] = useState(false)
 
   // Init theme and language from localStorage
   useEffect(() => {
@@ -66,11 +68,20 @@ export default function Home() {
   // Auth check
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setAuthUser(session?.user ?? null)
-      setAuthChecked(true)
-      if (!session?.user) {
-        const skipped = localStorage.getItem(SKIP_AUTH_KEY)
-        if (!skipped && language) setShowAuth(true)
+      if (session?.user) {
+        setAuthUser(session.user)
+        setAuthChecked(true)
+      } else {
+        // Check for PIN session
+        const pinUserId = localStorage.getItem('pin_user_id')
+        if (pinUserId) {
+          setAuthUser({ id: pinUserId, email: 'PIN user', isPinUser: true })
+          setAuthChecked(true)
+        } else {
+          setAuthChecked(true)
+          const skipped = localStorage.getItem(SKIP_AUTH_KEY)
+          if (!skipped && language) setShowAuth(true)
+        }
       }
     })
 
@@ -79,6 +90,7 @@ export default function Home() {
       if (session?.user) {
         setShowAuth(false)
         if (language) loadHistory(session.user.id, language)
+        if (shouldShowPinPrompt()) setShowPinPrompt(true)
       }
     })
 
@@ -124,6 +136,12 @@ export default function Home() {
   function handleSkipAuth() {
     localStorage.setItem(SKIP_AUTH_KEY, 'true')
     setShowAuth(false)
+  }
+
+  function handlePinLogin(userId: string) {
+    setShowAuth(false)
+    // Load history using userId directly since no Supabase session
+    if (language) loadHistory(userId, language)
   }
 
   function handleSignOut() {
@@ -240,7 +258,7 @@ export default function Home() {
   }
 
   // Show auth screen
-  if (showAuth) return <AuthScreen onSkip={handleSkipAuth} />
+  if (showAuth) return <AuthScreen onSkip={handleSkipAuth} onPinLogin={handlePinLogin} />
 
   // Wait for auth check
   if (!authChecked) return null
@@ -257,7 +275,7 @@ export default function Home() {
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <ThemeToggle theme={theme} onToggle={toggleTheme} />
               {authUser ? (
-                <UserMenu email={authUser.email} onSignOut={handleSignOut} />
+                <UserMenu email={authUser.email} userId={authUser.id} onSignOut={handleSignOut} />
               ) : (
                 <button className="auth-signin-btn" onClick={() => setShowAuth(true)}>
                   Sign in
@@ -346,6 +364,12 @@ export default function Home() {
       </div>
 
       {showTour && <TutorialTour onComplete={handleTourComplete} />}
+      {showPinPrompt && (
+        <PinPrompt
+          onSetPin={() => { setShowPinPrompt(false) }}
+          onDismiss={() => setShowPinPrompt(false)}
+        />
+      )}
     </main>
   )
 }
