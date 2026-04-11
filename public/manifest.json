@@ -1,11 +1,11 @@
 {
-  "name": "日本語 Learn Japanese",
-  "short_name": "日本語",
-  "description": "Translate, check your writing, and practise Japanese conversations.",
+  "name": "Trilingo",
+  "short_name": "Trilingo",
+  "description": "Learn Japanese, Korean, and Chinese — translate, check your writing, and practise conversations.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f0f1a",
-  "theme_color": "#e84393",
+  "background_color": "#2C2C2A",
+  "theme_color": "#D85A30",
   "orientation": "portrait",
   "icons": [
     {
