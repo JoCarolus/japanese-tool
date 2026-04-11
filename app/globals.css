@@ -1,3 +1,18 @@
+
+/* =====================
+   TRILINGO HEADER
+   ===================== */
+
+.trilingo-accent {
+  color: var(--accent);
+}
+
+.trilingo-lang {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
 /* =====================
    THEME VARIABLES
    ===================== */
@@ -232,12 +247,13 @@ body {
 }
 
 .switch-lang-btn {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-strong);
+  color: var(--text-secondary);
   border-radius: var(--radius-full);
   padding: 6px 14px;
   font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
@@ -256,9 +272,9 @@ body {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border-strong);
   background: var(--bg-card);
-  color: var(--text-muted);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -287,13 +303,13 @@ body {
 .top-tab {
   padding: 8px 16px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text-secondary);
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -1391,12 +1407,13 @@ textarea::placeholder { color: var(--text-placeholder); }
 .auth-sent-text strong { color: var(--accent); }
 
 .auth-signin-btn {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-strong);
+  color: var(--text-secondary);
   border-radius: 8px;
   padding: 6px 16px;
   font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }

@@ -265,7 +265,7 @@ export default function Home() {
               )}
             </div>
           </div>
-          <h1><span style={{color: "var(--accent)"}}>Tri</span>lingo <span style={{fontSize: "1.2rem", fontWeight: 400, color: "var(--text-muted)"}}>— {langName}</span></h1>
+          <h1><span style={{color: "var(--accent)"}}>Tri</span>lingo<span style={{color: "var(--text-secondary)", fontWeight: 700}}> — {langName}</span></h1>
           <p>Translate, check your writing, practise conversations, and master the {langName} alphabet.</p>
         </header>
 
@@ -274,8 +274,8 @@ export default function Home() {
             ['en-to-lang', `EN → ${langName.slice(0, 2)}`],
             ['lang-to-en', `${langName.slice(0, 2)} → EN`],
             ['check', 'Check'],
-            ['converse', '💬 Converse'],
-            ['alphabet', '🔤 Alphabet'],
+            ['converse', 'Converse'],
+            ['alphabet', 'Alphabet'],
           ] as [Mode, string][]).map(([m, label]) => (
             <button
               key={m}

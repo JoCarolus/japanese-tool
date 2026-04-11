@@ -88,7 +88,7 @@ export default function TranslateInput({
           {loading ? 'Working...' : btnLabel}
         </button>
         <button className="btn-clear" onClick={onClear}>Clear</button>
-        <span className="hint">Enter to submit \u00b7 Shift+Enter for new line</span>
+        <span className="hint">Enter to submit · Shift+Enter for new line</span>
       </div>
     </div>
   )
