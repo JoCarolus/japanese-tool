@@ -176,6 +176,7 @@ body {
   font-size: 2rem;
   line-height: 1;
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .lang-card-name {
@@ -188,6 +189,13 @@ body {
   font-size: 0.78rem;
   color: var(--text-muted);
   line-height: 1.4;
+}
+
+.lang-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
 }
 
 /* =====================
@@ -1660,9 +1668,11 @@ textarea::placeholder { color: var(--text-placeholder); }
   .summary-stats { gap: 20px; }
   .summary-stat-num { font-size: 1.2rem; }
 
-  .lang-grid { grid-template-columns: 1fr; max-width: 280px; }
-  .lang-card { flex-direction: row; text-align: left; padding: 18px 20px; }
-  .lang-card-script { font-size: 1.8rem; }
+  .lang-grid { grid-template-columns: 1fr; max-width: 400px; width: 100%; }
+  .lang-card { flex-direction: row; text-align: left; padding: 16px 20px; align-items: center; gap: 16px; }
+  .lang-card-script { font-size: 1.4rem; white-space: nowrap; min-width: 48px; text-align: center; }
+  .lang-card-name { font-size: 1rem; }
+  .lang-card-desc { font-size: 0.75rem; }
 
   .quiz-options { grid-template-columns: 1fr 1fr; }
   .flashcard-char { font-size: 3rem; }

@@ -11,24 +11,9 @@ type Props = {
 }
 
 const LANGUAGES = [
-  {
-    id: 'japanese' as Language,
-    name: 'Japanese',
-    script: '日本語',
-    desc: 'Hiragana, Katakana & Kanji',
-  },
-  {
-    id: 'korean' as Language,
-    name: 'Korean',
-    script: '한국어',
-    desc: 'Hangul alphabet',
-  },
-  {
-    id: 'chinese' as Language,
-    name: 'Chinese',
-    script: '中文',
-    desc: 'Mandarin & characters',
-  },
+  { id: 'japanese' as Language, name: 'Japanese', script: '日本語', desc: 'Hiragana, Katakana & Kanji' },
+  { id: 'korean' as Language, name: 'Korean', script: '한국어', desc: 'Hangul alphabet' },
+  { id: 'chinese' as Language, name: 'Chinese', script: '中文', desc: 'Mandarin & characters' },
 ]
 
 export default function LanguageSelect({ onSelect, theme, onToggleTheme }: Props) {
@@ -56,8 +41,10 @@ export default function LanguageSelect({ onSelect, theme, onToggleTheme }: Props
             onClick={() => onSelect(lang.id)}
           >
             <div className="lang-card-script">{lang.script}</div>
-            <div className="lang-card-name">{lang.name}</div>
-            <div className="lang-card-desc">{lang.desc}</div>
+            <div className="lang-card-text">
+              <div className="lang-card-name">{lang.name}</div>
+              <div className="lang-card-desc">{lang.desc}</div>
+            </div>
           </button>
         ))}
       </div>
