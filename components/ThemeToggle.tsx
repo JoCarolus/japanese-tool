@@ -12,7 +12,7 @@ export default function ThemeToggle({ theme, onToggle }: Props) {
       onClick={onToggle}
       title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
     >
-      {theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+      {theme === 'dark' ? '☀️' : '🌙'}
     </button>
   )
 }

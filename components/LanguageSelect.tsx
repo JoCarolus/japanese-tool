@@ -39,7 +39,7 @@ export default function LanguageSelect({ onSelect, theme, onToggleTheme }: Props
       </div>
 
       <div className="lang-select-header">
-        <div className="lang-select-logo">\uD83C\uDF0F</div>
+        <div className="lang-select-logo">🌏</div>
         <h1 className="lang-select-title">
           Learn a <span>Language</span>
         </h1>

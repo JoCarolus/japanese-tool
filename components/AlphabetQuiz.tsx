@@ -85,7 +85,7 @@ export default function AlphabetQuiz({ cards }: Props) {
       <div className="quiz-card">
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: '3rem', marginBottom: 8 }}>
-            {score >= 80 ? '\u{1F389}' : score >= 50 ? '\u{1F4AA}' : '\u{1F4DA}'}
+            {score >= 80 ? '🎉' : score >= 50 ? '💪' : '📚'}
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 700, color: scoreColor, marginBottom: 4 }}>
             {score}%

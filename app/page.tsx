@@ -252,7 +252,7 @@ export default function Home() {
         <header className="header">
           <div className="header-top">
             <button className="switch-lang-btn" onClick={() => setLanguage(null)}>
-              \u2190 Languages
+              ← Languages
             </button>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <ThemeToggle theme={theme} onToggle={toggleTheme} />
@@ -271,11 +271,11 @@ export default function Home() {
 
         <div className="top-tabs">
           {([
-            ['en-to-lang', `EN \u2192 ${langName.slice(0, 2)}`],
-            ['lang-to-en', `${langName.slice(0, 2)} \u2192 EN`],
+            ['en-to-lang', `EN → ${langName.slice(0, 2)}`],
+            ['lang-to-en', `${langName.slice(0, 2)} → EN`],
             ['check', 'Check'],
-            ['converse', '\u{1F4AC} Converse'],
-            ['alphabet', '\u{1F524} Alphabet'],
+            ['converse', '💬 Converse'],
+            ['alphabet', '🔤 Alphabet'],
           ] as [Mode, string][]).map(([m, label]) => (
             <button
               key={m}
@@ -318,7 +318,7 @@ export default function Home() {
               <div style={{ position: 'relative' }}>
                 {isMockResult && (
                   <div className="mock-badge">
-                    Preview \u2014 this is what your results look like
+                    Preview — this is what your results look like
                   </div>
                 )}
                 <ResultCard result={result} />
