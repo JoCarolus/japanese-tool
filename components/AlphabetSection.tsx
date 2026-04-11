@@ -4,17 +4,18 @@ import { useState } from 'react'
 import { ALPHABET_DATA } from '@/lib/alphabetData'
 import Flashcard from '@/components/Flashcard'
 import AlphabetQuiz from '@/components/AlphabetQuiz'
+import AlphabetGrid from '@/components/AlphabetGrid'
 
 type Props = {
   language: string
 }
 
-type AlphabetMode = 'flashcard' | 'quiz'
+type AlphabetMode = 'grid' | 'flashcard' | 'quiz'
 
 export default function AlphabetSection({ language }: Props) {
   const sets = ALPHABET_DATA[language] || []
   const [activeSet, setActiveSet] = useState(sets[0]?.id || '')
-  const [mode, setMode] = useState<AlphabetMode>('flashcard')
+  const [mode, setMode] = useState<AlphabetMode>('grid')
 
   if (sets.length === 0) {
     return (
@@ -51,6 +52,12 @@ export default function AlphabetSection({ language }: Props) {
         </div>
         <div className="alphabet-mode-tabs">
           <button
+            className={`alphabet-mode-btn ${mode === 'grid' ? 'active' : ''}`}
+            onClick={() => setMode('grid')}
+          >
+            All characters
+          </button>
+          <button
             className={`alphabet-mode-btn ${mode === 'flashcard' ? 'active' : ''}`}
             onClick={() => setMode('flashcard')}
           >
@@ -66,9 +73,13 @@ export default function AlphabetSection({ language }: Props) {
       </div>
 
       {/* Content */}
-      {mode === 'flashcard' ? (
+      {mode === 'grid' && (
+        <AlphabetGrid cards={currentSet.cards} language={language} />
+      )}
+      {mode === 'flashcard' && (
         <Flashcard cards={currentSet.cards} language={language} />
-      ) : (
+      )}
+      {mode === 'quiz' && (
         <AlphabetQuiz cards={currentSet.cards} />
       )}
 

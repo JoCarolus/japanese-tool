@@ -1667,3 +1667,91 @@ textarea::placeholder { color: var(--text-placeholder); }
   .quiz-options { grid-template-columns: 1fr 1fr; }
   .flashcard-char { font-size: 3rem; }
 }
+
+/* =====================
+   ALPHABET GRID
+   ===================== */
+
+.alphabet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+}
+
+.alpha-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.alpha-card:hover {
+  border-color: var(--accent);
+  background: var(--bg-card-hover);
+}
+
+.alpha-card.open {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  grid-column: span 2;
+  flex-direction: column;
+}
+
+.alpha-card-char {
+  font-size: 1.6rem;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.alpha-card-romaji {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.alpha-card-detail {
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.alpha-card-meaning {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: center;
+}
+
+.alpha-card-tip {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.flashcard-audio-btn.playing {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media (max-width: 480px) {
+  .alphabet-grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 6px;
+  }
+
+  .alpha-card-char { font-size: 1.3rem; }
+  .alpha-card.open { grid-column: span 2; }
+}

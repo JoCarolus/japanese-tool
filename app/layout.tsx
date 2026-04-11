@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: '日本語 Learn Japanese',
-  description: 'Translate, check your writing, and practise Japanese conversations.',
+  title: 'Trilingo',
+  description: 'Learn Japanese, Korean, and Chinese — translate, check your writing, and practise conversations.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

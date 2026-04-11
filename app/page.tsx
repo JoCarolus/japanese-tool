@@ -265,8 +265,8 @@ export default function Home() {
               )}
             </div>
           </div>
-          <h1>{langScript} <span>Learn {langName}</span></h1>
-          <p>Translate, check your writing, practise conversations, and learn the alphabet.</p>
+          <h1><span style={{color: "var(--accent)"}}>Tri</span>lingo <span style={{fontSize: "1.2rem", fontWeight: 400, color: "var(--text-muted)"}}>— {langName}</span></h1>
+          <p>Translate, check your writing, practise conversations, and master the {langName} alphabet.</p>
         </header>
 
         <div className="top-tabs">
