@@ -53,6 +53,19 @@ export default function Flashcard({ cards, language }: Props) {
     return <div>No cards available</div>
   }
 
+  // SVG Icon Components
+  const PlayIcon = () => (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 4 }}>
+      <polygon points="5,3 19,12 5,21" />
+    </svg>
+  )
+
+  const StopIcon = () => (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 4 }}>
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+    </svg>
+  )
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="flashcard-wrap" onClick={handleFlip}>
@@ -89,7 +102,19 @@ export default function Flashcard({ cards, language }: Props) {
             }}
             disabled={isLoading || !card.char}
           >
-            {isLoading ? '⏳...' : (isPlaying ? '■ Stop' : '▶ Play')}
+            {isLoading ? (
+              '⏳...'
+            ) : isPlaying ? (
+              <>
+                <StopIcon />
+                Stop
+              </>
+            ) : (
+              <>
+                <PlayIcon />
+                Play
+              </>
+            )}
           </button>
         </div>
 

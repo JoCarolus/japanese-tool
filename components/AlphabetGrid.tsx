@@ -69,13 +69,29 @@ export default function AlphabetGrid({ cards, language }: Props) {
                   <div className="alpha-card-tip">{card.tip}</div>
                 )}
                 <button
-                  className={`flashcard-audio-btn ${isThisCardPlaying ? 'playing' : ''}`}
-                  style={{ marginTop: 8 }}
-                  onClick={(e) => handlePlay(card.char, cardId, e)}
-                  disabled={isLoading && isThisCardPlaying}
-                >
-                  {isLoading && isThisCardPlaying ? '⏳...' : (isThisCardPlaying ? '■ Stop' : '▶ Play')}
-                </button>
+  className={`flashcard-audio-btn ${isThisCardPlaying ? 'playing' : ''}`}
+  style={{ marginTop: 8 }}
+  onClick={(e) => handlePlay(card.char, cardId, e)}
+  disabled={isLoading && isThisCardPlaying}
+>
+  {isLoading && isThisCardPlaying ? (
+    '⏳...'
+  ) : isThisCardPlaying ? (
+    <>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 4 }}>
+        <rect x="4" y="4" width="16" height="16" rx="2" />
+      </svg>
+      Stop
+    </>
+  ) : (
+    <>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 4 }}>
+        <polygon points="5,3 19,12 5,21" />
+      </svg>
+      Play
+    </>
+  )}
+</button>
               </div>
             )}
           </div>

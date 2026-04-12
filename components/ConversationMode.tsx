@@ -388,12 +388,28 @@ export default function ConversationMode({ language = 'japanese' }: { language?:
                   <div className="chat-en">{msg.english}</div>
                   <div className="btn-row" style={{ marginTop: 8 }}>
                     <button
-                      className={`play-btn ${isThisMessagePlaying ? 'playing' : ''}`}
-                      onClick={() => handlePlayAudio(msg.japanese, messageId)}
-                      disabled={isLoading}
-                    >
-                      {isLoading && isThisMessagePlaying ? '⏳...' : (isThisMessagePlaying ? '■ Stop' : '▶ Play')}
-                    </button>
+  className={`play-btn ${isThisMessagePlaying ? 'playing' : ''}`}
+  onClick={() => handlePlayAudio(msg.japanese, messageId)}
+  disabled={isLoading}
+>
+  {isLoading && isThisMessagePlaying ? (
+    '⏳...'
+  ) : isThisMessagePlaying ? (
+    <>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 4 }}>
+        <rect x="4" y="4" width="16" height="16" rx="2" />
+      </svg>
+      Stop
+    </>
+  ) : (
+    <>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 4 }}>
+        <polygon points="5,3 19,12 5,21" />
+      </svg>
+      Play
+    </>
+  )}
+</button>
                     <CopyButton text={msg.japanese} />
                   </div>
                 </div>
