@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 
 type Props = {
   onSkip: () => void
-  onPinLogin?: (userId: string) => void
+  onPinLogin?: (userId: string, email: string) => void
 }
 
 type Mode = 'check' | 'magic' | 'pin' | 'sent'
@@ -70,7 +70,7 @@ export default function AuthScreen({ onSkip, onPinLogin }: Props) {
         await new Promise(resolve => setTimeout(resolve, 100))
         const saved = localStorage.getItem('pin_user_id')
         if (saved === data.userId) {
-          onPinLogin?.(data.userId)
+  onPinLogin?.(data.userId, data.email || '')
         } else {
           setError('Could not save session. Please try again.')
           setPin('')

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { TranslationResult } from '@/lib/supabase'
 
 type Props = {
@@ -17,26 +17,64 @@ function InlineCopyButton({ text }: { text: string }) {
   }
   return (
     <button className="inline-copy-btn" onClick={handleCopy}>
-      {copied ? '✓' : 'Copy'}
+      {copied ? '\u2713' : 'Copy'}
     </button>
   )
 }
 
 export default function ResultCard({ result }: Props) {
   const [speaking, setSpeaking] = useState(false)
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([])
+
+  useEffect(() => {
+    function loadVoices() {
+      voicesRef.current = window.speechSynthesis.getVoices()
+    }
+    loadVoices()
+    window.speechSynthesis.onvoiceschanged = loadVoices
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null
+    }
+  }, [])
+
+  function getVoice(langCode: string) {
+    const voices = voicesRef.current.length
+      ? voicesRef.current
+      : window.speechSynthesis.getVoices()
+    return voices.find(v => v.lang.startsWith(langCode)) || null
+  }
 
   const handleSpeak = () => {
     if (!window.speechSynthesis) return
     window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(result.japanese_kanji)
-    utterance.lang = 'ja-JP'
+
+    const text = result.japanese_kanji || result.korean || result.chinese || ''
+    if (!text) return
+
+    const langCode = result.japanese_kanji
+      ? 'ja-JP'
+      : result.korean
+      ? 'ko-KR'
+      : 'zh-CN'
+
+    const langPrefix = result.japanese_kanji
+      ? 'ja'
+      : result.korean
+      ? 'ko'
+      : 'zh'
+
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = langCode
     utterance.rate = 0.85
-    const voices = window.speechSynthesis.getVoices()
-    const japaneseVoice = voices.find(v => v.lang.startsWith('ja'))
-    if (japaneseVoice) utterance.voice = japaneseVoice
+
+    const voice = getVoice(langPrefix)
+    if (voice) utterance.voice = voice
+
     utterance.onstart = () => setSpeaking(true)
     utterance.onend = () => setSpeaking(false)
     utterance.onerror = () => setSpeaking(false)
+
+    setSpeaking(true)
     window.speechSynthesis.speak(utterance)
   }
 
@@ -48,24 +86,20 @@ export default function ResultCard({ result }: Props) {
   return (
     <div className="result-card">
 
-      {/* English */}
       <div className="result-section">
         <div className="section-label">English</div>
         <div className="english-text">{result.english}</div>
       </div>
 
-      {/* Japanese */}
       <div className="result-section result-japanese">
         <div className="section-label">Japanese</div>
         <div className="japanese-block">
 
-          {/* Kanji line */}
           <div className="japanese-line">
             <div className="japanese-kanji">{result.japanese_kanji}</div>
             <InlineCopyButton text={result.japanese_kanji} />
           </div>
 
-          {/* Kana line */}
           {result.japanese_kana && (
             <div className="japanese-line">
               <div className="japanese-kana">Reading: {result.japanese_kana}</div>
@@ -73,7 +107,6 @@ export default function ResultCard({ result }: Props) {
             </div>
           )}
 
-          {/* Romaji line */}
           {result.japanese_romaji && (
             <div className="japanese-line">
               <div className="japanese-romaji">Romaji: {result.japanese_romaji}</div>
@@ -83,17 +116,15 @@ export default function ResultCard({ result }: Props) {
 
         </div>
 
-        {/* Audio button on its own line below */}
         <button
-          className={`play-btn ${speaking ? 'playing' : ''}`}
+          className={'play-btn ' + (speaking ? 'playing' : '')}
           style={{ marginTop: 12 }}
           onClick={speaking ? handleStop : handleSpeak}
         >
-          {speaking ? '■ Stop' : '▶ Play Audio'}
+          {speaking ? '\u25a0 Stop' : '\u25b6 Play Audio'}
         </button>
       </div>
 
-      {/* Pronunciation */}
       {(result.syllable_breakdown || result.pitch_accent || result.pronunciation_tips) && (
         <div className="result-section result-pronunciation">
           <div className="section-label">Pronunciation</div>
@@ -118,7 +149,6 @@ export default function ResultCard({ result }: Props) {
         </div>
       )}
 
-      {/* Word Breakdown */}
       {result.breakdown?.length > 0 && (
         <div className="result-section result-breakdown">
           <div className="section-label">Word Breakdown</div>
@@ -145,7 +175,6 @@ export default function ResultCard({ result }: Props) {
         </div>
       )}
 
-      {/* Sentence Structure */}
       {result.structure && (
         <div className="result-section result-structure">
           <div className="section-label">Sentence Structure</div>
@@ -156,7 +185,6 @@ export default function ResultCard({ result }: Props) {
         </div>
       )}
 
-      {/* Usage Tips */}
       {result.tips && (
         <div className="result-section result-tips">
           <div className="section-label">Usage Tips</div>

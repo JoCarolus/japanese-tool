@@ -59,7 +59,6 @@ export default function Home() {
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     setTheme(savedTheme)
     document.documentElement.setAttribute('data-theme', savedTheme)
-
     const savedLang = localStorage.getItem(LANG_KEY) as Language | null
     if (savedLang) setLanguage(savedLang)
   }, [])
@@ -76,8 +75,9 @@ export default function Home() {
       }
 
       const pinUserId = localStorage.getItem('pin_user_id')
+      const pinEmail = localStorage.getItem('pin_user_email')
       if (pinUserId) {
-        setAuthUser({ id: pinUserId, email: 'PIN user', isPinUser: true })
+        setAuthUser({ id: pinUserId, email: pinEmail || 'PIN user', isPinUser: true })
         setAuthChecked(true)
         return
       }
@@ -141,8 +141,9 @@ export default function Home() {
     setShowAuth(false)
   }
 
-  function handlePinLogin(userId: string) {
-    const pinUser = { id: userId, email: 'PIN user', isPinUser: true }
+  function handlePinLogin(userId: string, email: string) {
+    localStorage.setItem('pin_user_email', email)
+    const pinUser = { id: userId, email: email || 'PIN user', isPinUser: true }
     setAuthUser(pinUser)
     setShowAuth(false)
     if (language) loadHistory(userId, language)
@@ -150,6 +151,7 @@ export default function Home() {
 
   function handleSignOut() {
     localStorage.removeItem('pin_user_id')
+    localStorage.removeItem('pin_user_email')
     setAuthUser(null)
     setHistory([])
   }
@@ -173,14 +175,13 @@ export default function Home() {
   }
 
   async function loadHistory(userId: string, lang: Language) {
-    const { data, error } = await supabase
-      .from('translations')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('language', lang)
-      .order('created_at', { ascending: false })
-      .limit(20)
-    if (!error && data) setHistory(data as Translation[])
+    const res = await fetch('/api/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'fetch', userId, language: lang }),
+    })
+    const json = await res.json()
+    if (json.data) setHistory(json.data as Translation[])
   }
 
   async function handleSubmit() {
@@ -212,14 +213,17 @@ export default function Home() {
         setResult(data)
 
         if (authUser) {
-          const { error: dbError } = await supabase.from('translations').insert({
-            input_text: trimmed,
-            direction: mode,
-            user_id: authUser.id,
-            language,
-            ...data,
+          await fetch('/api/history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'save',
+              userId: authUser.id,
+              language,
+              translation: { input_text: trimmed, direction: mode, ...data },
+            }),
           })
-          if (!dbError) loadHistory(authUser.id, language)
+          loadHistory(authUser.id, language)
         }
       }
     } catch {
@@ -240,12 +244,12 @@ export default function Home() {
 
   async function handleClearHistory() {
     if (!authUser || !language) return
-    const { error } = await supabase
-      .from('translations')
-      .delete()
-      .eq('user_id', authUser.id)
-      .eq('language', language)
-    if (!error) setHistory([])
+    await fetch('/api/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'clear', userId: authUser.id, language }),
+    })
+    setHistory([])
   }
 
   const langName = language ? LANG_NAMES[language] : ''
@@ -260,18 +264,22 @@ export default function Home() {
     )
   }
 
-  if (showAuth) return <AuthScreen onSkip={handleSkipAuth} onPinLogin={handlePinLogin} />
+  if (showAuth) return (
+    <AuthScreen
+      onSkip={handleSkipAuth}
+      onPinLogin={handlePinLogin}
+    />
+  )
 
   if (!authChecked) return null
 
   return (
     <main className="main">
       <div className="container">
-
         <header className="header">
           <div className="header-top">
             <button className="switch-lang-btn" onClick={() => setLanguage(null)}>
-              ← Languages
+              {'\u2190'} Languages
             </button>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <ThemeToggle theme={theme} onToggle={toggleTheme} />
@@ -284,21 +292,24 @@ export default function Home() {
               )}
             </div>
           </div>
-          <h1><span style={{color: "var(--accent)"}}>Tri</span>lingo<span style={{color: "var(--text-secondary)", fontWeight: 700}}> — {langName}</span></h1>
+          <h1>
+            <span style={{ color: 'var(--accent)' }}>Tri</span>lingo
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}> {'\u2014'} {langName}</span>
+          </h1>
           <p>Translate, check your writing, practise conversations, and master the {langName} alphabet.</p>
         </header>
 
         <div className="top-tabs">
           {([
-            ['en-to-lang', `EN → ${langName.slice(0, 2)}`],
-            ['lang-to-en', `${langName.slice(0, 2)} → EN`],
+            ['en-to-lang', 'EN \u2192 ' + langName.slice(0, 2)],
+            ['lang-to-en', langName.slice(0, 2) + ' \u2192 EN'],
             ['check', 'Check'],
             ['converse', 'Converse'],
             ['alphabet', 'Alphabet'],
           ] as [Mode, string][]).map(([m, label]) => (
             <button
               key={m}
-              className={`top-tab ${mode === m ? 'active' : ''}`}
+              className={'top-tab ' + (mode === m ? 'active' : '')}
               onClick={() => handleModeChange(m)}
             >
               {label}
@@ -337,7 +348,7 @@ export default function Home() {
               <div style={{ position: 'relative' }}>
                 {isMockResult && (
                   <div className="mock-badge">
-                    Preview — this is what your results look like
+                    Preview {'\u2014'} this is what your results look like
                   </div>
                 )}
                 <ResultCard result={result} />
@@ -361,7 +372,6 @@ export default function Home() {
             )}
           </>
         )}
-
       </div>
 
       {showTour && <TutorialTour onComplete={handleTourComplete} />}

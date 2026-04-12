@@ -35,11 +35,11 @@ export async function POST(req: NextRequest) {
       const hashed = hashPin(pin)
       const { data } = await supabase
         .from('language_profiles')
-        .select('id')
+        .select('id, email')
         .eq('pin_hash', hashed)
         .maybeSingle()
       if (data) {
-        return NextResponse.json({ success: true, userId: data.id })
+        return NextResponse.json({ success: true, userId: data.id, email: data.email || '' })
       }
       return NextResponse.json({ success: false })
     }
@@ -47,9 +47,13 @@ export async function POST(req: NextRequest) {
     if (action === 'set') {
       if (!pin || !userId) return NextResponse.json({ success: false })
       const hashed = hashPin(pin)
+
+      const { data: authUser } = await supabase.auth.admin.getUserById(userId)
+      const email = authUser?.user?.email || ''
+
       const { error } = await supabase
         .from('language_profiles')
-        .upsert({ id: userId, pin_hash: hashed }, { onConflict: 'id' })
+        .upsert({ id: userId, pin_hash: hashed, email }, { onConflict: 'id' })
       return NextResponse.json({ success: !error })
     }
 

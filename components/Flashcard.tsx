@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { AlphabetCard } from '@/lib/alphabetData'
 
 type Props = {
@@ -10,21 +10,44 @@ type Props = {
 
 function useSpeech() {
   const [speaking, setSpeaking] = useState(false)
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([])
+
+  useEffect(() => {
+    function loadVoices() {
+      voicesRef.current = window.speechSynthesis.getVoices()
+    }
+    loadVoices()
+    window.speechSynthesis.onvoiceschanged = loadVoices
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null
+    }
+  }, [])
+
   function speak(text: string, lang: string) {
     if (!window.speechSynthesis) return
     window.speechSynthesis.cancel()
+
+    const langCode = lang === 'japanese' ? 'ja-JP' : lang === 'korean' ? 'ko-KR' : 'zh-CN'
+    const langPrefix = lang === 'japanese' ? 'ja' : lang === 'korean' ? 'ko' : 'zh'
+
     const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = lang === 'japanese' ? 'ja-JP' : lang === 'korean' ? 'ko-KR' : 'zh-CN'
+    utterance.lang = langCode
     utterance.rate = 0.8
-    const voices = window.speechSynthesis.getVoices()
-    const langCode = lang === 'japanese' ? 'ja' : lang === 'korean' ? 'ko' : 'zh'
-    const voice = voices.find(v => v.lang.startsWith(langCode))
+
+    const voices = voicesRef.current.length
+      ? voicesRef.current
+      : window.speechSynthesis.getVoices()
+    const voice = voices.find(v => v.lang.startsWith(langPrefix))
     if (voice) utterance.voice = voice
+
     utterance.onstart = () => setSpeaking(true)
     utterance.onend = () => setSpeaking(false)
     utterance.onerror = () => setSpeaking(false)
+
+    setSpeaking(true)
     window.speechSynthesis.speak(utterance)
   }
+
   return { speaking, speak }
 }
 
@@ -53,7 +76,7 @@ export default function Flashcard({ cards, language }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       <div className="flashcard-wrap" onClick={handleFlip}>
-        <div className={`flashcard ${flipped ? 'flipped' : ''}`}>
+        <div className={'flashcard ' + (flipped ? 'flipped' : '')}>
           <div className="flashcard-front">
             <div className="flashcard-char">{card.char}</div>
             <div className="flashcard-hint">Tap to reveal</div>
@@ -73,7 +96,7 @@ export default function Flashcard({ cards, language }: Props) {
           onClick={goPrev}
           disabled={index === 0}
         >
-          ← Prev
+          {'\u2190'} Prev
         </button>
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
@@ -82,7 +105,7 @@ export default function Flashcard({ cards, language }: Props) {
             className="flashcard-audio-btn"
             onClick={(e) => { e.stopPropagation(); speak(card.char, language) }}
           >
-            {speaking ? '■ Stop' : '▶ Play'}
+            {speaking ? '\u25a0 Stop' : '\u25b6 Play'}
           </button>
         </div>
 
@@ -91,7 +114,7 @@ export default function Flashcard({ cards, language }: Props) {
           onClick={goNext}
           disabled={index === cards.length - 1}
         >
-          Next →
+          Next {'\u2192'}
         </button>
       </div>
 
