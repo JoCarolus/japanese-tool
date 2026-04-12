@@ -2,39 +2,46 @@
 
 import { useState } from 'react'
 import { AlphabetCard } from '@/lib/alphabetData'
+import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 
 type Props = {
   cards: AlphabetCard[]
   language: string
 }
 
-function useSpeech() {
-  const [speaking, setSpeaking] = useState<string | null>(null)
-  function speak(text: string, id: string, lang: string) {
-    if (!window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    if (speaking === id) { setSpeaking(null); return }
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = lang === 'japanese' ? 'ja-JP' : lang === 'korean' ? 'ko-KR' : 'zh-CN'
-    utterance.rate = 0.8
-    const voices = window.speechSynthesis.getVoices()
-    const langCode = lang === 'japanese' ? 'ja' : lang === 'korean' ? 'ko' : 'zh'
-    const voice = voices.find(v => v.lang.startsWith(langCode))
-    if (voice) utterance.voice = voice
-    utterance.onstart = () => setSpeaking(id)
-    utterance.onend = () => setSpeaking(null)
-    utterance.onerror = () => setSpeaking(null)
-    window.speechSynthesis.speak(utterance)
-  }
-  return { speaking, speak }
-}
-
 export default function AlphabetGrid({ cards, language }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null)
-  const { speaking, speak } = useSpeech()
+  const { isPlaying, isLoading, speak, stop } = useAudioPlayer()
+  const [playingCardId, setPlayingCardId] = useState<string | null>(null)
 
   function toggle(char: string) {
     setExpanded(prev => prev === char ? null : char)
+  }
+
+  const getLangCode = () => {
+    switch(language) {
+      case 'japanese': return 'ja-JP'
+      case 'korean': return 'ko-KR'
+      case 'chinese': return 'zh-CN'
+      default: return 'ja-JP'
+    }
+  }
+
+  const handlePlay = async (char: string, cardId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    if (playingCardId === cardId && isPlaying) {
+      stop()
+      setPlayingCardId(null)
+    } else {
+      stop()
+      setPlayingCardId(cardId)
+      await speak(char, getLangCode())
+      // Reset playing state when done (speak will trigger isPlaying to change)
+      setTimeout(() => {
+        if (!isPlaying) setPlayingCardId(null)
+      }, 500)
+    }
   }
 
   return (
@@ -42,6 +49,8 @@ export default function AlphabetGrid({ cards, language }: Props) {
       {cards.map((card, i) => {
         const isOpen = expanded === card.char
         const cardId = `card-${i}`
+        const isThisCardPlaying = playingCardId === cardId && isPlaying
+
         return (
           <div
             key={i}
@@ -60,11 +69,12 @@ export default function AlphabetGrid({ cards, language }: Props) {
                   <div className="alpha-card-tip">{card.tip}</div>
                 )}
                 <button
-                  className={`flashcard-audio-btn ${speaking === cardId ? 'playing' : ''}`}
+                  className={`flashcard-audio-btn ${isThisCardPlaying ? 'playing' : ''}`}
                   style={{ marginTop: 8 }}
-                  onClick={() => speak(card.char, cardId, language)}
+                  onClick={(e) => handlePlay(card.char, cardId, e)}
+                  disabled={isLoading && isThisCardPlaying}
                 >
-                  {speaking === cardId ? '■ Stop' : '▶ Play'}
+                  {isLoading && isThisCardPlaying ? '⏳...' : (isThisCardPlaying ? '■ Stop' : '▶ Play')}
                 </button>
               </div>
             )}
