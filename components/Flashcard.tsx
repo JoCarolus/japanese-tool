@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'  // ← Make sure this is here
+import { useState } from 'react'
 import { AlphabetCard } from '@/lib/alphabetData'
-import { useAudioPlayer } from '../hooks/useAudioPlayer'
+import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 
 type Props = {
   cards: AlphabetCard[]
@@ -12,6 +12,7 @@ type Props = {
 export default function Flashcard({ cards, language }: Props) {
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
+  const [audioReady, setAudioReady] = useState(false)
   const { isPlaying, speak, stop } = useAudioPlayer();
 
   const card = cards[index]
@@ -26,13 +27,32 @@ export default function Flashcard({ cards, language }: Props) {
     }
   };
 
-  function handleSpeak() {
+  // Create a silent audio context on first user tap
+  const initAudio = async () => {
+    if (audioReady) return;
+    
+    const silentAudio = new Audio();
+    silentAudio.volume = 0;
+    silentAudio.play().then(() => {
+      silentAudio.pause();
+      setAudioReady(true);
+      console.log('Audio context initialized');
+    }).catch(e => console.log('Audio init:', e));
+  };
+
+  const handleSpeak = async () => {
+    if (!audioReady) {
+      await initAudio();
+      setTimeout(() => handleSpeak(), 100);
+      return;
+    }
+    
     if (isPlaying) {
       stop();
     } else {
-      speak(card.char, getLangCode());
+      await speak(card.char, getLangCode());
     }
-  }
+  };
 
   function goNext() {
     setFlipped(false)
