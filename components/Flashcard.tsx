@@ -26,9 +26,9 @@ export default function Flashcard({ cards, language }: Props) {
   };
 
   const handlePlay = async () => {
-    if (card?.char) {
-      await speak(card.char, getLangCode());
-    }
+    if (!card?.char) return;
+    console.log('Playing alphabet audio:', card.char, getLangCode());
+    await speak(card.char, getLangCode());
   };
 
   const handleStop = () => {

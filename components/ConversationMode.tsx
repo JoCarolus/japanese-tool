@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import MicButton from '@/components/MicButton'
+import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 
 const TOPICS = [
   { id: 'greetings', label: 'Greetings', emoji: '👋', description: 'Hello, goodbye, how are you' },
@@ -42,26 +43,6 @@ type Summary = {
   encouragement: string
 }
 
-function useSpeech() {
-  const [speaking, setSpeaking] = useState<string | null>(null)
-  function speak(text: string, id: string) {
-    if (!window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    if (speaking === id) { setSpeaking(null); return }
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = 'ja-JP'
-    utterance.rate = 0.85
-    const voices = window.speechSynthesis.getVoices()
-    const jpVoice = voices.find(v => v.lang.startsWith('ja'))
-    if (jpVoice) utterance.voice = jpVoice
-    utterance.onstart = () => setSpeaking(id)
-    utterance.onend = () => setSpeaking(null)
-    utterance.onerror = () => setSpeaking(null)
-    window.speechSynthesis.speak(utterance)
-  }
-  return { speaking, speak }
-}
-
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
   function handleCopy() {
@@ -83,12 +64,13 @@ export default function ConversationMode({ language = 'japanese' }: { language?:
   const [selectedLength, setSelectedLength] = useState<typeof LENGTH_OPTIONS[0] | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
-  const [japaneseInput, setJapaneseInput] = useState('') // Japanese-only for sending
+  const [japaneseInput, setJapaneseInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [exchangeCount, setExchangeCount] = useState(0)
   const [summary, setSummary] = useState<Summary | null>(null)
   const [corrections, setCorrections] = useState<any[]>([])
-  const { speaking, speak } = useSpeech()
+  const { isPlaying, isLoading, speak, stop } = useAudioPlayer() // ← NEW: use our working hook
+  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null) // Track which message is playing
   const bottomRef = useRef<HTMLDivElement>(null)
   const chatHistory = useRef<{ role: string; content: string }[]>([])
 
@@ -123,8 +105,6 @@ export default function ConversationMode({ language = 'japanese' }: { language?:
   }
 
   async function sendMessage() {
-    // Use japanese-only version for sending if available (from mic input)
-    // otherwise use the raw input (typed Japanese)
     const displayText = input.trim()
     const sendText = japaneseInput.trim() || displayText
     if (!displayText || loading) return
@@ -155,7 +135,6 @@ export default function ConversationMode({ language = 'japanese' }: { language?:
       })
       const data = await res.json()
 
-      // Attach correction to the user message
       if (data.correction) {
         setCorrections(prev => [...prev, data.correction])
         setMessages(prev =>
@@ -187,7 +166,6 @@ export default function ConversationMode({ language = 'japanese' }: { language?:
     }
   }
 
-  // Enter to send, Shift+Enter for new line
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -227,7 +205,32 @@ export default function ConversationMode({ language = 'japanese' }: { language?:
     chatHistory.current = []
   }
 
-  // ── TOPIC SELECTION ──
+  // NEW: Handle audio playback for bot messages
+  async function handlePlayAudio(text: string, messageId: string) {
+    if (playingMessageId === messageId && isPlaying) {
+      // If this message is currently playing, stop it
+      stop();
+      setPlayingMessageId(null);
+    } else {
+      // Stop any current playback and play the new one
+      stop();
+      setPlayingMessageId(messageId);
+      
+      // Get language code
+      let langCode = 'ja-JP';
+      if (language === 'korean') langCode = 'ko-KR';
+      else if (language === 'chinese') langCode = 'zh-CN';
+      
+      await speak(text, langCode);
+      
+      // Reset playing state when done (speak function handles this via isPlaying)
+      setTimeout(() => {
+        if (!isPlaying) setPlayingMessageId(null);
+      }, 500);
+    }
+  }
+
+  // TOPIC SELECTION
   if (stage === 'topic') {
     return (
       <div className="convo-container">
@@ -261,7 +264,7 @@ export default function ConversationMode({ language = 'japanese' }: { language?:
     )
   }
 
-  // ── LENGTH SELECTION ──
+  // LENGTH SELECTION
   if (stage === 'length') {
     return (
       <div className="convo-container">
@@ -296,7 +299,7 @@ export default function ConversationMode({ language = 'japanese' }: { language?:
     )
   }
 
-  // ── SUMMARY ──
+  // SUMMARY
   if (stage === 'summary') {
     const score = summary?.overall_score ?? 0
     const scoreColor = score >= 90 ? '#22c55e' : score >= 70 ? '#84cc16' : score >= 50 ? '#f59e0b' : '#f97316'
@@ -354,7 +357,7 @@ export default function ConversationMode({ language = 'japanese' }: { language?:
     )
   }
 
-  // ── CHAT ──
+  // CHAT
   return (
     <div className="convo-container">
       <div className="chat-header">
@@ -372,51 +375,57 @@ export default function ConversationMode({ language = 'japanese' }: { language?:
       </div>
 
       <div className="chat-messages">
-        {messages.map((msg, i) => (
-          <div key={i} className={`chat-bubble-wrap ${msg.role}`}>
-            {msg.role === 'bot' ? (
-              <div className="chat-bubble bot-bubble">
-                <div className="chat-jp">{msg.japanese}</div>
-                <div className="chat-romaji">{msg.romaji}</div>
-                <div className="chat-en">{msg.english}</div>
-                <div className="btn-row" style={{ marginTop: 8 }}>
-                  <button
-                    className={`play-btn ${speaking === `msg-${i}` ? 'playing' : ''}`}
-                    onClick={() => speak(msg.japanese, `msg-${i}`)}
-                  >
-                    {speaking === `msg-${i}` ? '■ Stop' : '▶ Play'}
-                  </button>
-                  <CopyButton text={msg.japanese} />
-                </div>
-              </div>
-            ) : (
-              <div className="chat-bubble user-bubble">
-                <div className="chat-jp">{msg.japanese}</div>
-                {msg.correction && !msg.correction.is_correct && (
-                  <div className="chat-correction">
-                    <div className="chat-correction-score">
-                      <span style={{
-                        color: msg.correction.confidence_score >= 70 ? '#84cc16' :
-                               msg.correction.confidence_score >= 40 ? '#f59e0b' : '#ef4444'
-                      }}>
-                        {msg.correction.confidence_score}% — {msg.correction.confidence_label}
-                      </span>
-                    </div>
-                    {msg.correction.corrected !== msg.japanese && (
-                      <div className="chat-correction-text">✏️ {msg.correction.corrected}</div>
-                    )}
-                    {msg.correction.tip && (
-                      <div className="chat-correction-tip">💡 {msg.correction.tip}</div>
-                    )}
+        {messages.map((msg, i) => {
+          const messageId = `msg-${i}`;
+          const isThisMessagePlaying = playingMessageId === messageId && isPlaying;
+          
+          return (
+            <div key={i} className={`chat-bubble-wrap ${msg.role}`}>
+              {msg.role === 'bot' ? (
+                <div className="chat-bubble bot-bubble">
+                  <div className="chat-jp">{msg.japanese}</div>
+                  <div className="chat-romaji">{msg.romaji}</div>
+                  <div className="chat-en">{msg.english}</div>
+                  <div className="btn-row" style={{ marginTop: 8 }}>
+                    <button
+                      className={`play-btn ${isThisMessagePlaying ? 'playing' : ''}`}
+                      onClick={() => handlePlayAudio(msg.japanese, messageId)}
+                      disabled={isLoading}
+                    >
+                      {isLoading && isThisMessagePlaying ? '⏳...' : (isThisMessagePlaying ? '■ Stop' : '▶ Play')}
+                    </button>
+                    <CopyButton text={msg.japanese} />
                   </div>
-                )}
-                {msg.correction?.is_correct && (
-                  <div className="chat-correction-perfect">✓ Perfect!</div>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
+                </div>
+              ) : (
+                <div className="chat-bubble user-bubble">
+                  <div className="chat-jp">{msg.japanese}</div>
+                  {msg.correction && !msg.correction.is_correct && (
+                    <div className="chat-correction">
+                      <div className="chat-correction-score">
+                        <span style={{
+                          color: msg.correction.confidence_score >= 70 ? '#84cc16' :
+                                 msg.correction.confidence_score >= 40 ? '#f59e0b' : '#ef4444'
+                        }}>
+                          {msg.correction.confidence_score}% — {msg.correction.confidence_label}
+                        </span>
+                      </div>
+                      {msg.correction.corrected !== msg.japanese && (
+                        <div className="chat-correction-text">✏️ {msg.correction.corrected}</div>
+                      )}
+                      {msg.correction.tip && (
+                        <div className="chat-correction-tip">💡 {msg.correction.tip}</div>
+                      )}
+                    </div>
+                  )}
+                  {msg.correction?.is_correct && (
+                    <div className="chat-correction-perfect">✓ Perfect!</div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {loading && (
           <div className="chat-bubble-wrap bot">
