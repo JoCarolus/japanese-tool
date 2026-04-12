@@ -10,11 +10,18 @@ type Props = {
 
 function useSpeech() {
   const [speaking, setSpeaking] = useState(false)
+  const [audioInitialized, setAudioInitialized] = useState(false)
   const voicesRef = useRef<SpeechSynthesisVoice[]>([])
 
   useEffect(() => {
     function loadVoices() {
-      voicesRef.current = window.speechSynthesis.getVoices()
+      const voices = window.speechSynthesis.getVoices()
+      if (voices.length > 0) {
+        voicesRef.current = voices
+      } else {
+        // Retry after a short delay on mobile
+        setTimeout(loadVoices, 100)
+      }
     }
     loadVoices()
     window.speechSynthesis.onvoiceschanged = loadVoices
@@ -23,8 +30,27 @@ function useSpeech() {
     }
   }, [])
 
+  const initAudio = () => {
+    if (!audioInitialized && window.speechSynthesis) {
+      // Prime the audio system with a silent utterance
+      const silentUtterance = new SpeechSynthesisUtterance(' ')
+      silentUtterance.volume = 0
+      window.speechSynthesis.speak(silentUtterance)
+      window.speechSynthesis.cancel()
+      setAudioInitialized(true)
+    }
+  }
+
   function speak(text: string, lang: string) {
     if (!window.speechSynthesis) return
+    
+    // Initialize audio on first user interaction
+    if (!audioInitialized) {
+      initAudio()
+      setTimeout(() => speak(text, lang), 100)
+      return
+    }
+    
     window.speechSynthesis.cancel()
 
     const langCode = lang === 'japanese' ? 'ja-JP' : lang === 'korean' ? 'ko-KR' : 'zh-CN'
@@ -44,7 +70,7 @@ function useSpeech() {
     utterance.onend = () => setSpeaking(false)
     utterance.onerror = () => setSpeaking(false)
 
-    setSpeaking(true)
+    // REMOVED: setSpeaking(true) - this was causing race conditions
     window.speechSynthesis.speak(utterance)
   }
 

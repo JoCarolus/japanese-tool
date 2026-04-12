@@ -24,11 +24,18 @@ function InlineCopyButton({ text }: { text: string }) {
 
 export default function ResultCard({ result }: Props) {
   const [speaking, setSpeaking] = useState(false)
+  const [audioInitialized, setAudioInitialized] = useState(false)
   const voicesRef = useRef<SpeechSynthesisVoice[]>([])
 
   useEffect(() => {
     function loadVoices() {
-      voicesRef.current = window.speechSynthesis.getVoices()
+      const voices = window.speechSynthesis.getVoices()
+      if (voices.length > 0) {
+        voicesRef.current = voices
+      } else {
+        // Retry after a short delay on mobile
+        setTimeout(loadVoices, 100)
+      }
     }
     loadVoices()
     window.speechSynthesis.onvoiceschanged = loadVoices
@@ -44,8 +51,27 @@ export default function ResultCard({ result }: Props) {
     return voices.find(v => v.lang.startsWith(langCode)) || null
   }
 
+  const initAudio = () => {
+    if (!audioInitialized && window.speechSynthesis) {
+      // Prime the audio system with a silent utterance
+      const silentUtterance = new SpeechSynthesisUtterance(' ')
+      silentUtterance.volume = 0
+      window.speechSynthesis.speak(silentUtterance)
+      window.speechSynthesis.cancel()
+      setAudioInitialized(true)
+    }
+  }
+
   const handleSpeak = () => {
     if (!window.speechSynthesis) return
+    
+    // Initialize audio on first user interaction
+    if (!audioInitialized) {
+      initAudio()
+      setTimeout(handleSpeak, 100)
+      return
+    }
+    
     window.speechSynthesis.cancel()
 
     const text = result.japanese_kanji || result.korean || result.chinese || ''
@@ -74,7 +100,7 @@ export default function ResultCard({ result }: Props) {
     utterance.onend = () => setSpeaking(false)
     utterance.onerror = () => setSpeaking(false)
 
-    setSpeaking(true)
+    // REMOVED: setSpeaking(true) - this was causing race conditions
     window.speechSynthesis.speak(utterance)
   }
 
