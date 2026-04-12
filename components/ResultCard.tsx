@@ -27,17 +27,14 @@ export default function ResultCard({ result }: Props) {
   const { isPlaying, isLoading, speak, stop } = useAudioPlayer();
 
   const handlePlay = async () => {
-    // Get the text to speak
     const text = result.japanese_kanji || result.korean || result.chinese || '';
     if (!text) return;
 
-    // Get the language code
     let langCode = 'ja-JP';
     if (result.korean) langCode = 'ko-KR';
     else if (result.chinese) langCode = 'zh-CN';
     else langCode = 'ja-JP';
 
-    // Play the audio (same pattern as working test page)
     await speak(text, langCode);
   };
 
@@ -47,6 +44,16 @@ export default function ResultCard({ result }: Props) {
 
   return (
     <div className="result-card">
+      {/* DEBUG PANEL - Shows on screen */}
+      <div style={{ background: '#f0f0f0', padding: 8, margin: 8, fontSize: 11, borderRadius: 4, border: '1px solid red' }}>
+        <strong>🔍 DEBUG:</strong><br />
+        isPlaying: {String(isPlaying)}<br />
+        isLoading: {String(isLoading)}<br />
+        text: {result.japanese_kanji || result.korean || result.chinese || 'none'}<br />
+        korean: {result.korean || 'none'}<br />
+        chinese: {result.chinese || 'none'}
+      </div>
+
       <div className="result-section">
         <div className="section-label">English</div>
         <div className="english-text">{result.english}</div>
@@ -85,7 +92,6 @@ export default function ResultCard({ result }: Props) {
         </button>
       </div>
 
-      {/* Rest of your component - keep exactly as is */}
       {(result.syllable_breakdown || result.pitch_accent || result.pronunciation_tips) && (
         <div className="result-section result-pronunciation">
           <div className="section-label">Pronunciation</div>
