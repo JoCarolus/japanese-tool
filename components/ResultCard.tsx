@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { TranslationResult } from '@/lib/supabase'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 
@@ -24,100 +24,27 @@ function InlineCopyButton({ text }: { text: string }) {
 }
 
 export default function ResultCard({ result }: Props) {
-  const { isPlaying, usingFallback, speak, stop } = useAudioPlayer();
-  const [audioReady, setAudioReady] = useState(false);
-  const [debugLog, setDebugLog] = useState<string[]>([]);
-
-  const addDebugLog = (message: string) => {
-    console.log(message);
-    setDebugLog(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
-  };
-
-  // Create a silent audio context on first user tap
-  const initAudio = async () => {
-    addDebugLog('initAudio called, audioReady: ' + audioReady);
-    if (audioReady) return;
-    
-    try {
-      const silentAudio = new Audio();
-      silentAudio.volume = 0;
-      addDebugLog('Created silent audio, attempting to play...');
-      await silentAudio.play();
-      addDebugLog('Silent audio played successfully');
-      silentAudio.pause();
-      setAudioReady(true);
-      addDebugLog('Audio context initialized successfully');
-    } catch (e) {
-      addDebugLog('Audio init error: ' + (e instanceof Error ? e.message : String(e)));
-    }
-  };
+  const { isPlaying, speak, stop } = useAudioPlayer();
 
   const handleSpeak = async () => {
-    addDebugLog('handleSpeak called, audioReady: ' + audioReady + ', isPlaying: ' + isPlaying);
-    
-    if (!audioReady) {
-      addDebugLog('Audio not ready, initializing...');
-      await initAudio();
-      addDebugLog('After init, calling handleSpeak again');
-      setTimeout(() => handleSpeak(), 100);
-      return;
-    }
-    
     const text = result.japanese_kanji || result.korean || result.chinese || '';
-    addDebugLog('Text to speak: "' + text + '"');
-    
-    if (!text) {
-      addDebugLog('No text to speak');
-      return;
-    }
+    if (!text) return;
 
     const langCode = result.japanese_kanji
       ? 'ja-JP'
       : result.korean
       ? 'ko-KR'
       : 'zh-CN';
-    
-    addDebugLog('Language code: ' + langCode);
-    addDebugLog('Calling speak() function...');
-    
-    try {
+
+    if (isPlaying) {
+      stop();
+    } else {
       await speak(text, langCode);
-      addDebugLog('speak() completed successfully');
-    } catch (error) {
-      addDebugLog('speak() error: ' + (error instanceof Error ? error.message : String(error)));
     }
-  };
-
-  const handleStop = () => {
-    addDebugLog('handleStop called');
-    stop();
-  };
-
-  const buttonText = () => {
-    if (isPlaying) return '\u25a0 Stop';
-    if (usingFallback) return '\u25b6 Play (Cloud)';
-    return '\u25b6 Play Audio';
   };
 
   return (
     <div className="result-card">
-      {/* Debug Panel - Shows on mobile */}
-      <div style={{ 
-        background: '#f0f0f0', 
-        padding: '8px', 
-        margin: '8px', 
-        fontSize: '10px', 
-        fontFamily: 'monospace',
-        borderRadius: '4px',
-        maxHeight: '150px',
-        overflow: 'auto'
-      }}>
-        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Debug Log:</div>
-        {debugLog.slice(-5).map((log, i) => (
-          <div key={i} style={{ borderTop: '1px solid #ddd', padding: '2px 0' }}>{log}</div>
-        ))}
-      </div>
-
       <div className="result-section">
         <div className="section-label">English</div>
         <div className="english-text">{result.english}</div>
@@ -149,18 +76,13 @@ export default function ResultCard({ result }: Props) {
         <button
           className={'play-btn ' + (isPlaying ? 'playing' : '')}
           style={{ marginTop: 12 }}
-          onClick={isPlaying ? handleStop : handleSpeak}
+          onClick={handleSpeak}
         >
-          {buttonText()}
+          {isPlaying ? '\u25a0 Stop' : '\u25b6 Play Audio'}
         </button>
-        {usingFallback && isPlaying && (
-          <div style={{ fontSize: '12px', marginTop: '4px', color: '#666' }}>
-            Using cloud audio for reliability
-          </div>
-        )}
       </div>
 
-      {/* Rest of your component - keep the same */}
+      {/* Rest of your component (pronunciation, breakdown, structure, tips sections) */}
       {(result.syllable_breakdown || result.pitch_accent || result.pronunciation_tips) && (
         <div className="result-section result-pronunciation">
           <div className="section-label">Pronunciation</div>
