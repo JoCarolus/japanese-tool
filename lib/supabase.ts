@@ -7,6 +7,8 @@ export type Translation = {
   input_text: string
   direction: string
   english: string
+  chinese: string
+  korean: string
   japanese_kanji: string
   japanese_kana: string
   japanese_romaji: string
