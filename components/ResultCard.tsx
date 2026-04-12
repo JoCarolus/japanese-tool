@@ -68,7 +68,7 @@ export default function ResultCard({ result }: Props) {
     // Initialize audio on first user interaction
     if (!audioInitialized) {
       initAudio()
-      setTimeout(handleSpeak, 100)
+      setTimeout(handleSpeak, 300)
       return
     }
     
