@@ -24,9 +24,14 @@ function InlineCopyButton({ text }: { text: string }) {
 }
 
 export default function ResultCard({ result }: Props) {
-  const { isPlaying, speak, stop } = useAudioPlayer();
+  const { isPlaying, isLoading, speak, stop } = useAudioPlayer();
 
   const handleSpeak = async () => {
+    if (isPlaying) {
+      stop();
+      return;
+    }
+    
     const text = result.japanese_kanji || result.korean || result.chinese || '';
     if (!text) return;
 
@@ -36,11 +41,13 @@ export default function ResultCard({ result }: Props) {
       ? 'ko-KR'
       : 'zh-CN';
 
-    if (isPlaying) {
-      stop();
-    } else {
-      await speak(text, langCode);
-    }
+    await speak(text, langCode);
+  };
+
+  const buttonText = () => {
+    if (isLoading) return '⏳ Loading...';
+    if (isPlaying) return '\u25a0 Stop';
+    return '\u25b6 Play Audio';
   };
 
   return (
@@ -77,12 +84,18 @@ export default function ResultCard({ result }: Props) {
           className={'play-btn ' + (isPlaying ? 'playing' : '')}
           style={{ marginTop: 12 }}
           onClick={handleSpeak}
+          disabled={isLoading}
         >
-          {isPlaying ? '\u25a0 Stop' : '\u25b6 Play Audio'}
+          {buttonText()}
         </button>
+        {isLoading && (
+          <div style={{ fontSize: '12px', marginTop: '4px', color: '#666' }}>
+            Preparing audio...
+          </div>
+        )}
       </div>
 
-      {/* Rest of your component (pronunciation, breakdown, structure, tips sections) */}
+      {/* Rest of your component remains the same */}
       {(result.syllable_breakdown || result.pitch_accent || result.pronunciation_tips) && (
         <div className="result-section result-pronunciation">
           <div className="section-label">Pronunciation</div>
