@@ -27,13 +27,21 @@ export default function ResultCard({ result }: Props) {
   const { isPlaying, isLoading, speak, stop } = useAudioPlayer();
 
   const handlePlay = async () => {
-    const text = result.japanese_kanji || result.korean || result.chinese || '';
+    // Get text from the field that actually has content
+    const text = result.japanese_kanji || result.japanese_kana || result.japanese_romaji || result.english;
     if (!text) return;
 
+    // Auto-detect language from text characters
     let langCode = 'ja-JP';
-    if (result.korean) langCode = 'ko-KR';
-    else if (result.chinese) langCode = 'zh-CN';
-    else langCode = 'ja-JP';
+    
+    const hasKorean = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(text);
+    const hasJapanese = /[ぁ-んァ-ン一-龯]/.test(text);
+    
+    if (hasKorean && !hasJapanese) {
+      langCode = 'ko-KR';
+    } else if (result.chinese) {
+      langCode = 'zh-CN';
+    }
 
     await speak(text, langCode);
   };
@@ -49,9 +57,7 @@ export default function ResultCard({ result }: Props) {
         <strong>🔍 DEBUG:</strong><br />
         isPlaying: {String(isPlaying)}<br />
         isLoading: {String(isLoading)}<br />
-        text: {result.japanese_kanji || result.korean || result.chinese || 'none'}<br />
-        korean: {result.korean || 'none'}<br />
-        chinese: {result.chinese || 'none'}
+        text: {result.japanese_kanji || result.japanese_kana || result.japanese_romaji || result.english || 'none'}
       </div>
 
       <div className="result-section">
@@ -60,7 +66,7 @@ export default function ResultCard({ result }: Props) {
       </div>
 
       <div className="result-section result-japanese">
-        <div className="section-label">Japanese</div>
+        <div className="section-label">Japanese / Korean / Chinese</div>
         <div className="japanese-block">
           <div className="japanese-line">
             <div className="japanese-kanji">{result.japanese_kanji}</div>
