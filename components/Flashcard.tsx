@@ -29,7 +29,9 @@ export default function Flashcard({ cards, language }: Props) {
     if (isPlaying) {
       stop();
     } else {
-      await speak(card.char, getLangCode());
+      if (card?.char) {
+        await speak(card.char, getLangCode());
+      }
     }
   };
 
@@ -45,6 +47,10 @@ export default function Flashcard({ cards, language }: Props) {
 
   function handleFlip() {
     setFlipped(f => !f)
+  }
+
+  if (!card) {
+    return <div>No cards available</div>
   }
 
   return (
@@ -70,7 +76,7 @@ export default function Flashcard({ cards, language }: Props) {
           onClick={goPrev}
           disabled={index === 0}
         >
-          {'\u2190'} Prev
+          ← Prev
         </button>
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
@@ -81,9 +87,9 @@ export default function Flashcard({ cards, language }: Props) {
               e.stopPropagation(); 
               handleSpeak();
             }}
-            disabled={isLoading}
+            disabled={isLoading || !card.char}
           >
-            {isLoading ? '⏳...' : (isPlaying ? '\u25a0 Stop' : '\u25b6 Play')}
+            {isLoading ? '⏳...' : (isPlaying ? '■ Stop' : '▶ Play')}
           </button>
         </div>
 
@@ -92,9 +98,9 @@ export default function Flashcard({ cards, language }: Props) {
           onClick={goNext}
           disabled={index === cards.length - 1}
         >
-          Next {'\u2192'}
+          Next →
         </button>
       </div>
     </div>
-  )
+  );
 }

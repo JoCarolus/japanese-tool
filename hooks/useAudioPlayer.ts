@@ -1,4 +1,3 @@
-// hooks/useAudioPlayer.ts - Mobile-friendly with pre-fetch
 import { useState, useRef, useCallback } from 'react';
 
 export function useAudioPlayer() {
@@ -16,17 +15,13 @@ export function useAudioPlayer() {
     setIsPlaying(false);
   }, []);
 
-  // Pre-fetch audio URL without playing
   const preFetchAudio = useCallback(async (text: string, langCode: string) => {
-    // Don't re-fetch if already have this text
     if (preFetchedTextRef.current === text && preFetchedUrlRef.current) {
-      console.log('Using cached audio URL');
       return preFetchedUrlRef.current;
     }
     
     setIsLoading(true);
     try {
-      // Clean up old URL
       if (preFetchedUrlRef.current) {
         URL.revokeObjectURL(preFetchedUrlRef.current);
       }
@@ -39,7 +34,6 @@ export function useAudioPlayer() {
       preFetchedUrlRef.current = url;
       preFetchedTextRef.current = text;
       
-      console.log('Pre-fetched audio URL:', url);
       return url;
     } catch (error) {
       console.error('Pre-fetch error:', error);
@@ -49,10 +43,8 @@ export function useAudioPlayer() {
     }
   }, []);
 
-  // Play pre-fetched audio immediately (no delay!)
   const playPreFetched = useCallback(async () => {
     if (!preFetchedUrlRef.current) {
-      console.error('No pre-fetched audio available');
       return false;
     }
     
@@ -63,15 +55,10 @@ export function useAudioPlayer() {
       audioRef.current = audio;
       
       audio.onplay = () => setIsPlaying(true);
-      audio.onended = () => {
-        setIsPlaying(false);
-        // Don't revoke URL - keep for potential replay
-      };
+      audio.onended = () => setIsPlaying(false);
       audio.onerror = () => setIsPlaying(false);
       
-      // This play() call happens immediately with no await delay
       await audio.play();
-      console.log('Playing pre-fetched audio');
       return true;
     } catch (error) {
       console.error('Play error:', error);
@@ -82,11 +69,7 @@ export function useAudioPlayer() {
 
   const speak = useCallback(async (text: string, langCode: string) => {
     if (!text || isPlaying) return;
-    
-    // First, pre-fetch the audio
     await preFetchAudio(text, langCode);
-    
-    // Then play it immediately
     await playPreFetched();
   }, [isPlaying, preFetchAudio, playPreFetched]);
 

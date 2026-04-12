@@ -18,7 +18,7 @@ function InlineCopyButton({ text }: { text: string }) {
   }
   return (
     <button className="inline-copy-btn" onClick={handleCopy}>
-      {copied ? '\u2713' : 'Copy'}
+      {copied ? '✓' : 'Copy'}
     </button>
   )
 }
@@ -46,8 +46,8 @@ export default function ResultCard({ result }: Props) {
 
   const buttonText = () => {
     if (isLoading) return '⏳ Loading...';
-    if (isPlaying) return '\u25a0 Stop';
-    return '\u25b6 Play Audio';
+    if (isPlaying) return '■ Stop';
+    return '▶ Play Audio';
   };
 
   return (
@@ -88,14 +88,8 @@ export default function ResultCard({ result }: Props) {
         >
           {buttonText()}
         </button>
-        {isLoading && (
-          <div style={{ fontSize: '12px', marginTop: '4px', color: '#666' }}>
-            Preparing audio...
-          </div>
-        )}
       </div>
 
-      {/* Rest of your component remains the same */}
       {(result.syllable_breakdown || result.pitch_accent || result.pronunciation_tips) && (
         <div className="result-section result-pronunciation">
           <div className="section-label">Pronunciation</div>

@@ -1,4 +1,3 @@
-// app/api/tts/route.ts - Azure version
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
@@ -6,30 +5,18 @@ export async function GET(request: Request) {
   const text = searchParams.get('text');
   const lang = searchParams.get('lang');
 
-  console.log('🔊 TTS Request received:', { text, lang });
-
   if (!text) {
     return NextResponse.json({ error: 'Missing text parameter' }, { status: 400 });
   }
 
-  // Get Azure credentials from environment variables
   const apiKey = process.env.AZURE_SPEECH_KEY;
   const region = process.env.AZURE_SPEECH_REGION;
 
-  console.log('🔑 Azure credentials check:', { 
-    hasKey: !!apiKey, 
-    hasRegion: !!region 
-  });
-
   if (!apiKey || !region) {
-    console.error('❌ Missing Azure credentials');
-    return NextResponse.json({ 
-      error: 'TTS not configured - missing Azure credentials',
-      details: { hasKey: !!apiKey, hasRegion: !!region }
-    }, { status: 500 });
+    console.error('Missing Azure credentials');
+    return NextResponse.json({ error: 'TTS not configured' }, { status: 500 });
   }
 
-  // Map language to Azure voice names
   const voiceMap: Record<string, string> = {
     'ja-JP': 'ja-JP-NanamiNeural',
     'ko-KR': 'ko-KR-SunHiNeural',
@@ -39,7 +26,6 @@ export async function GET(request: Request) {
   const languageCode = lang || 'ja-JP';
   const voiceName = voiceMap[languageCode] || 'ja-JP-NanamiNeural';
 
-  // Create SSML (Speech Synthesis Markup Language)
   const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${languageCode}">
     <voice name="${voiceName}">
       <prosody rate="0%">${escapeXml(text)}</prosody>
@@ -48,7 +34,6 @@ export async function GET(request: Request) {
 
   try {
     const endpoint = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
-    console.log('🌐 Calling Azure endpoint:', endpoint);
     
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -60,20 +45,14 @@ export async function GET(request: Request) {
       body: ssml,
     });
 
-    console.log('📡 Azure response status:', response.status);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Azure TTS error:', response.status, errorText);
-      return NextResponse.json(
-        { error: `TTS API error: ${response.status}`, details: errorText },
-        { status: response.status }
-      );
+      const error = await response.text();
+      console.error('Azure error:', response.status, error);
+      return NextResponse.json({ error: 'TTS failed' }, { status: response.status });
     }
 
     const audioBuffer = await response.arrayBuffer();
-    console.log('✅ Audio generated, size:', audioBuffer.byteLength, 'bytes');
-
+    
     return new NextResponse(audioBuffer, {
       headers: {
         'Content-Type': 'audio/mpeg',
@@ -81,15 +60,11 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error('❌ TTS request error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
-    );
+    console.error('TTS error:', error);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
 
-// Helper function to escape XML special characters
 function escapeXml(unsafe: string): string {
   return unsafe.replace(/[<>&'"]/g, (c) => {
     switch (c) {
