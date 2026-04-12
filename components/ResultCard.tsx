@@ -50,16 +50,30 @@ export default function ResultCard({ result }: Props) {
     stop();
   };
 
+  // Play icon SVG (triangle)
+  const PlayIcon = () => (
+    <svg width="12" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 6, marginBottom: -1 }}>
+      <polygon points="5,3 19,12 5,21" />
+    </svg>
+  )
+
+  // Stop icon SVG (square)
+  const StopIcon = () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 6, marginBottom: -1 }}>
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+    </svg>
+  )
+
+  // Loading spinner SVG
+  const LoadingIcon = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 6, animation: 'spin 1s linear infinite' }}>
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" />
+      <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeLinecap="round" />
+    </svg>
+  )
+
   return (
     <div className="result-card">
-      {/* DEBUG PANEL - Shows on screen */}
-      <div style={{ background: '#f0f0f0', padding: 8, margin: 8, fontSize: 11, borderRadius: 4, border: '1px solid red' }}>
-        <strong>🔍 DEBUG:</strong><br />
-        isPlaying: {String(isPlaying)}<br />
-        isLoading: {String(isLoading)}<br />
-        text: {result.japanese_kanji || result.japanese_kana || result.japanese_romaji || result.english || 'none'}
-      </div>
-
       <div className="result-section">
         <div className="section-label">English</div>
         <div className="english-text">{result.english}</div>
@@ -94,7 +108,22 @@ export default function ResultCard({ result }: Props) {
           onClick={isPlaying ? handleStop : handlePlay}
           disabled={isLoading}
         >
-          {isLoading ? '⏳ Loading...' : (isPlaying ? '■ Stop' : '▶ Play Audio')}
+          {isLoading ? (
+            <>
+              <LoadingIcon />
+              Loading...
+            </>
+          ) : isPlaying ? (
+            <>
+              <StopIcon />
+              Stop
+            </>
+          ) : (
+            <>
+              <PlayIcon />
+              Play Audio
+            </>
+          )}
         </button>
       </div>
 
@@ -167,6 +196,14 @@ export default function ResultCard({ result }: Props) {
           />
         </div>
       )}
+
+      {/* Add spinning animation for loading icon */}
+      <style jsx>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

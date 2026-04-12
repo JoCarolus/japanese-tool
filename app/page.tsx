@@ -18,7 +18,7 @@ import PinPrompt, { shouldShowPinPrompt } from '@/components/PinPrompt'
 
 const TOUR_KEY = 'language-tool-tour-done'
 const SKIP_AUTH_KEY = 'language-tool-skip-auth'
-const LANG_KEY = 'language-tool-last-lang'
+// const LANG_KEY = 'language-tool-last-lang'  // REMOVED - no longer saving language
 const THEME_KEY = 'language-tool-theme'
 
 type Language = 'japanese' | 'korean' | 'chinese'
@@ -37,7 +37,7 @@ const LANG_SCRIPTS: Record<Language, string> = {
 }
 
 export default function Home() {
-  const [language, setLanguage] = useState<Language | null>(null)
+  const [language, setLanguage] = useState<Language | null>(null)  // Start with null (show language selection)
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [mode, setMode] = useState<Mode>('en-to-lang')
   const [input, setInput] = useState('')
@@ -59,8 +59,11 @@ export default function Home() {
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     setTheme(savedTheme)
     document.documentElement.setAttribute('data-theme', savedTheme)
-    const savedLang = localStorage.getItem(LANG_KEY) as Language | null
-    if (savedLang) setLanguage(savedLang)
+    
+    // REMOVED: Language restoration from localStorage
+    // const savedLang = localStorage.getItem(LANG_KEY) as Language | null
+    // if (savedLang) setLanguage(savedLang)
+    // Language will stay null, showing the selection screen
   }, [])
 
   useEffect(() => {
@@ -125,7 +128,7 @@ export default function Home() {
 
   function handleSelectLanguage(lang: Language) {
     setLanguage(lang)
-    localStorage.setItem(LANG_KEY, lang)
+    // REMOVED: localStorage.setItem(LANG_KEY, lang)  - No longer saving language
     setMode('en-to-lang')
     setResult(null)
     setCheckResult(null)
@@ -254,6 +257,7 @@ export default function Home() {
 
   const langName = language ? LANG_NAMES[language] : ''
 
+  // Language selection screen - shown first on every visit
   if (!language) {
     return (
       <LanguageSelect
