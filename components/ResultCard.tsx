@@ -90,6 +90,7 @@ export default function ResultCard({ result }: Props) {
         </button>
       </div>
 
+      {/* Rest of your component - pronunciation, breakdown, structure, tips sections remain the same */}
       {(result.syllable_breakdown || result.pitch_accent || result.pronunciation_tips) && (
         <div className="result-section result-pronunciation">
           <div className="section-label">Pronunciation</div>

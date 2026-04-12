@@ -1,77 +1,64 @@
+// hooks/useAudioPlayer.ts - PROVEN WORKING VERSION
 import { useState, useRef, useCallback } from 'react';
 
 export function useAudioPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const preFetchedUrlRef = useRef<string | null>(null);
-  const preFetchedTextRef = useRef<string>('');
 
   const stop = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current = null;
     }
     setIsPlaying(false);
   }, []);
 
-  const preFetchAudio = useCallback(async (text: string, langCode: string) => {
-    if (preFetchedTextRef.current === text && preFetchedUrlRef.current) {
-      return preFetchedUrlRef.current;
-    }
+  const speak = useCallback(async (text: string, langCode: string) => {
+    if (!text || isPlaying) return;
     
     setIsLoading(true);
+    
     try {
-      if (preFetchedUrlRef.current) {
-        URL.revokeObjectURL(preFetchedUrlRef.current);
-      }
+      // Stop any existing playback
+      stop();
       
+      // Fetch the audio
       const response = await fetch(`/api/tts?text=${encodeURIComponent(text)}&lang=${langCode}`);
-      if (!response.ok) throw new Error('TTS failed');
+      
+      if (!response.ok) {
+        throw new Error(`TTS failed: ${response.status}`);
+      }
       
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
-      preFetchedUrlRef.current = url;
-      preFetchedTextRef.current = text;
       
-      return url;
-    } catch (error) {
-      console.error('Pre-fetch error:', error);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const playPreFetched = useCallback(async () => {
-    if (!preFetchedUrlRef.current) {
-      return false;
-    }
-    
-    stop();
-    
-    try {
-      const audio = new Audio(preFetchedUrlRef.current);
+      // Create and play audio
+      const audio = new Audio(url);
       audioRef.current = audio;
       
       audio.onplay = () => setIsPlaying(true);
-      audio.onended = () => setIsPlaying(false);
-      audio.onerror = () => setIsPlaying(false);
+      audio.onended = () => {
+        setIsPlaying(false);
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+      };
+      audio.onerror = () => {
+        setIsPlaying(false);
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+      };
       
       await audio.play();
-      return true;
+      
     } catch (error) {
-      console.error('Play error:', error);
+      console.error('Audio error:', error);
       setIsPlaying(false);
-      return false;
+    } finally {
+      setIsLoading(false);
     }
-  }, [stop]);
-
-  const speak = useCallback(async (text: string, langCode: string) => {
-    if (!text || isPlaying) return;
-    await preFetchAudio(text, langCode);
-    await playPreFetched();
-  }, [isPlaying, preFetchAudio, playPreFetched]);
+  }, [isPlaying, stop]);
 
   return {
     isPlaying,
