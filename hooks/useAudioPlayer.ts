@@ -4,11 +4,16 @@ import { useState, useRef, useCallback } from 'react';
 export function useAudioPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [usingFallback, setUsingFallback] = useState(false);
+  const [forceFallback, setForceFallback] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const webSpeechFailedRef = useRef(false);
 
   // Check if Web Speech API is likely to work on this device
   const isWebSpeechReliable = useCallback(() => {
+    // If we've already detected failure, always use fallback
+    if (webSpeechFailedRef.current) return false;
+    
     // Chrome on Android has a known bug with SpeechSynthesis
     const isAndroidChrome = /Android.*Chrome/.test(navigator.userAgent);
     const isChrome = /Chrome/.test(navigator.userAgent);
@@ -20,12 +25,21 @@ export function useAudioPlayer() {
       return false;
     }
     
+    // Also check if it's Samsung Internet (has similar issues)
+    const isSamsung = /SamsungBrowser/.test(navigator.userAgent);
+    if (isSamsung) return false;
+    
+    // Check if it's iOS Safari (works well)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) return true;
+    
     return 'speechSynthesis' in window;
   }, []);
 
   const tryWebSpeech = useCallback((text: string, langCode: string): Promise<boolean> => {
     return new Promise((resolve) => {
-      if (!isWebSpeechReliable() || !window.speechSynthesis) {
+      // If forceFallback is true, skip Web Speech entirely
+      if (forceFallback || !isWebSpeechReliable() || !window.speechSynthesis) {
         resolve(false);
         return;
       }
@@ -33,46 +47,67 @@ export function useAudioPlayer() {
       // Cancel any ongoing speech
       window.speechSynthesis.cancel();
       
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = langCode;
-      utterance.rate = 0.85;
-      
-      let resolved = false;
-      
-      utterance.onstart = () => {
-        if (!resolved) {
-          resolved = true;
-          setIsPlaying(true);
-          resolve(true);
-        }
-      };
-      
-      utterance.onend = () => {
-        setIsPlaying(false);
-      };
-      
-      utterance.onerror = (event) => {
-        console.warn('WebSpeech error:', event);
-        setIsPlaying(false);
-        if (!resolved) {
-          resolved = true;
-          resolve(false);
-        }
-      };
-      
-      // Set a timeout - if it doesn't start in 2 seconds, fallback
+      // Small delay to ensure cancel is processed
       setTimeout(() => {
-        if (!resolved) {
-          window.speechSynthesis.cancel();
-          resolved = true;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = langCode;
+        utterance.rate = 0.85;
+        
+        let resolved = false;
+        let timeoutId: NodeJS.Timeout;
+        
+        utterance.onstart = () => {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeoutId);
+            setIsPlaying(true);
+            resolve(true);
+          }
+        };
+        
+        utterance.onend = () => {
+          setIsPlaying(false);
+          // Reset on successful completion
+          webSpeechFailedRef.current = false;
+        };
+        
+        utterance.onerror = (event) => {
+          console.warn('WebSpeech error:', event);
+          setIsPlaying(false);
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeoutId);
+            webSpeechFailedRef.current = true;
+            resolve(false);
+          }
+        };
+        
+        // Shorter timeout - if it doesn't start in 1 second, fallback
+        timeoutId = setTimeout(() => {
+          if (!resolved) {
+            console.warn('WebSpeech timeout - using fallback');
+            window.speechSynthesis.cancel();
+            resolved = true;
+            webSpeechFailedRef.current = true;
+            setForceFallback(true);
+            resolve(false);
+          }
+        }, 1000);
+        
+        currentUtteranceRef.current = utterance;
+        
+        try {
+          window.speechSynthesis.speak(utterance);
+        } catch (e) {
+          console.error('WebSpeech exception:', e);
+          clearTimeout(timeoutId);
+          webSpeechFailedRef.current = true;
+          setForceFallback(true);
           resolve(false);
         }
-      }, 2000);
-      
-      currentUtteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
+      }, 50);
     });
-  }, [isWebSpeechReliable]);
+  }, [isWebSpeechReliable, forceFallback]);
 
   const playFallbackAudio = useCallback((text: string, langCode: string): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -116,6 +151,12 @@ export function useAudioPlayer() {
     // Stop any current playback
     await stop();
     
+    // If we're already forcing fallback, skip Web Speech
+    if (forceFallback) {
+      await playFallbackAudio(text, langCode);
+      return;
+    }
+    
     // Try Web Speech first
     const webSpeechSuccess = await tryWebSpeech(text, langCode);
     
@@ -123,13 +164,17 @@ export function useAudioPlayer() {
     if (!webSpeechSuccess) {
       await playFallbackAudio(text, langCode);
     }
-  }, [tryWebSpeech, playFallbackAudio]);
+  }, [tryWebSpeech, playFallbackAudio, forceFallback]);
 
   const stop = useCallback(() => {
     return new Promise<void>((resolve) => {
       // Stop Web Speech
       if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
+        try {
+          window.speechSynthesis.cancel();
+        } catch (e) {
+          console.warn('Error canceling speech:', e);
+        }
         if (currentUtteranceRef.current) {
           currentUtteranceRef.current.onend = null;
           currentUtteranceRef.current = null;
