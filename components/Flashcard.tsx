@@ -1,7 +1,8 @@
 'use client'
 
+import { useState } from 'react'  // ← Make sure this is here
 import { AlphabetCard } from '@/lib/alphabetData'
-import { useAudioPlayer } from '@/hooks/useAudioPlayer'
+import { useAudioPlayer } from '../hooks/useAudioPlayer'
 
 type Props = {
   cards: AlphabetCard[]
@@ -33,27 +34,67 @@ export default function Flashcard({ cards, language }: Props) {
     }
   }
 
-  // ... rest of your component logic ...
+  function goNext() {
+    setFlipped(false)
+    setTimeout(() => setIndex(i => Math.min(i + 1, cards.length - 1)), 150)
+  }
+
+  function goPrev() {
+    setFlipped(false)
+    setTimeout(() => setIndex(i => Math.max(i - 1, 0)), 150)
+  }
+
+  function handleFlip() {
+    setFlipped(f => !f)
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* ... flashcard content ... */}
-      
+      <div className="flashcard-wrap" onClick={handleFlip}>
+        <div className={'flashcard ' + (flipped ? 'flipped' : '')}>
+          <div className="flashcard-front">
+            <div className="flashcard-char">{card.char}</div>
+            <div className="flashcard-hint">Tap to reveal</div>
+          </div>
+          <div className="flashcard-back">
+            <div className="flashcard-char">{card.char}</div>
+            <div className="flashcard-romaji">{card.romaji}</div>
+            {card.meaning && <div className="flashcard-meaning">{card.meaning}</div>}
+            {card.tip && <div className="flashcard-tip">{card.tip}</div>}
+          </div>
+        </div>
+      </div>
+
       <div className="flashcard-nav">
-        {/* ... navigation buttons ... */}
-        
         <button
-          className="flashcard-audio-btn"
-          onClick={(e) => { 
-            e.stopPropagation(); 
-            handleSpeak();
-          }}
+          className="flashcard-nav-btn"
+          onClick={goPrev}
+          disabled={index === 0}
         >
-          {isPlaying ? '\u25a0 Stop' : '\u25b6 Play'}
+          {'\u2190'} Prev
         </button>
-        
-        {/* ... rest of navigation ... */}
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <span className="flashcard-counter">{index + 1} / {cards.length}</span>
+          <button
+            className="flashcard-audio-btn"
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              handleSpeak();
+            }}
+          >
+            {isPlaying ? '\u25a0 Stop' : '\u25b6 Play'}
+          </button>
+        </div>
+
+        <button
+          className="flashcard-nav-btn"
+          onClick={goNext}
+          disabled={index === cards.length - 1}
+        >
+          Next {'\u2192'}
+        </button>
       </div>
     </div>
-  );
+  )
 }
