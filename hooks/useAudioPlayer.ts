@@ -1,4 +1,4 @@
-// hooks/useAudioPlayer.ts - PROVEN WORKING VERSION
+// hooks/useAudioPlayer.ts
 import { useState, useRef, useCallback } from 'react';
 
 export function useAudioPlayer() {
@@ -22,9 +22,12 @@ export function useAudioPlayer() {
     
     try {
       // Stop any existing playback
-      stop();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       
-      // Fetch the audio
+      // Fetch the audio - THIS WORKS ON MOBILE (proven by test page)
       const response = await fetch(`/api/tts?text=${encodeURIComponent(text)}&lang=${langCode}`);
       
       if (!response.ok) {
@@ -38,14 +41,21 @@ export function useAudioPlayer() {
       const audio = new Audio(url);
       audioRef.current = audio;
       
-      audio.onplay = () => setIsPlaying(true);
+      audio.onplay = () => {
+        setIsPlaying(true);
+        setIsLoading(false);
+      };
+      
       audio.onended = () => {
         setIsPlaying(false);
         URL.revokeObjectURL(url);
         audioRef.current = null;
       };
-      audio.onerror = () => {
+      
+      audio.onerror = (e) => {
+        console.error('Audio error:', e);
         setIsPlaying(false);
+        setIsLoading(false);
         URL.revokeObjectURL(url);
         audioRef.current = null;
       };
@@ -55,10 +65,9 @@ export function useAudioPlayer() {
     } catch (error) {
       console.error('Audio error:', error);
       setIsPlaying(false);
-    } finally {
       setIsLoading(false);
     }
-  }, [isPlaying, stop]);
+  }, [isPlaying]);
 
   return {
     isPlaying,

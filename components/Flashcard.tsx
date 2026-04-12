@@ -25,14 +25,14 @@ export default function Flashcard({ cards, language }: Props) {
     }
   };
 
-  const handleSpeak = async () => {
-    if (isPlaying) {
-      stop();
-    } else {
-      if (card?.char) {
-        await speak(card.char, getLangCode());
-      }
+  const handlePlay = async () => {
+    if (card?.char) {
+      await speak(card.char, getLangCode());
     }
+  };
+
+  const handleStop = () => {
+    stop();
   };
 
   function goNext() {
@@ -85,7 +85,7 @@ export default function Flashcard({ cards, language }: Props) {
             className="flashcard-audio-btn"
             onClick={(e) => { 
               e.stopPropagation(); 
-              handleSpeak();
+              isPlaying ? handleStop() : handlePlay();
             }}
             disabled={isLoading || !card.char}
           >
