@@ -1,5 +1,7 @@
 export const HELLO_MOCK = {
   english: 'Hello',
+  chinese: '你好',
+  korean: '안녕하세요',
   japanese_kanji: '\u3053\u3093\u306b\u3061\u306f',
   japanese_kana: '\u3053\u3093\u306b\u3061\u306f',
   japanese_romaji: 'Konnichiwa',
