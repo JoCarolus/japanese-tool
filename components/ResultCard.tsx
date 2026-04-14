@@ -27,24 +27,43 @@ export default function ResultCard({ result }: Props) {
   const { isPlaying, isLoading, speak, stop } = useAudioPlayer();
 
   const handlePlay = async () => {
-    // Get text from the field that actually has content
-    const text = result.japanese_kanji || result.japanese_kana || result.japanese_romaji || result.english;
-    if (!text) return;
-
-    // Auto-detect language from text characters
-    let langCode = 'ja-JP';
-    
-    const hasKorean = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(text);
-    const hasJapanese = /[ぁ-んァ-ン一-龯]/.test(text);
-    
-    if (hasKorean && !hasJapanese) {
-      langCode = 'ko-KR';
-    } else if (result.chinese) {
-      langCode = 'zh-CN';
-    }
-
-    await speak(text, langCode);
-  };
+  // Determine the correct text and language
+  let text = '';
+  let langCode = 'ja-JP';
+  
+  // Chinese - use the dedicated chinese field
+  if (result.chinese) {
+    text = result.chinese;
+    langCode = 'zh-CN';
+  }
+  // Korean - use the korean field
+  else if (result.korean) {
+    text = result.korean;
+    langCode = 'ko-KR';
+  }
+  // Japanese - use kanji first, then kana, then romaji
+  else if (result.japanese_kanji) {
+    text = result.japanese_kanji;
+    langCode = 'ja-JP';
+  }
+  else if (result.japanese_kana) {
+    text = result.japanese_kana;
+    langCode = 'ja-JP';
+  }
+  else if (result.japanese_romaji) {
+    text = result.japanese_romaji;
+    langCode = 'ja-JP';
+  }
+  // Fallback
+  else {
+    text = result.english;
+  }
+  
+  if (!text) return;
+  
+  console.log('Playing:', text, 'Language:', langCode); // Debug log
+  await speak(text, langCode);
+};
 
   const handleStop = () => {
     stop();
