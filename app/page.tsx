@@ -18,7 +18,6 @@ import PinPrompt, { shouldShowPinPrompt } from '@/components/PinPrompt'
 
 const TOUR_KEY = 'language-tool-tour-done'
 const SKIP_AUTH_KEY = 'language-tool-skip-auth'
-// const LANG_KEY = 'language-tool-last-lang'  // REMOVED - no longer saving language
 const THEME_KEY = 'language-tool-theme'
 
 type Language = 'japanese' | 'korean' | 'chinese'
@@ -30,14 +29,8 @@ const LANG_NAMES: Record<Language, string> = {
   chinese: 'Chinese',
 }
 
-const LANG_SCRIPTS: Record<Language, string> = {
-  japanese: '\u65e5\u672c\u8a9e',
-  korean: '\ud55c\uad6d\uc5b4',
-  chinese: '\u4e2d\u6587',
-}
-
 export default function Home() {
-  const [language, setLanguage] = useState<Language | null>(null)  // Start with null (show language selection)
+  const [language, setLanguage] = useState<Language | null>(null)
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [mode, setMode] = useState<Mode>('en-to-lang')
   const [input, setInput] = useState('')
@@ -59,11 +52,6 @@ export default function Home() {
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     setTheme(savedTheme)
     document.documentElement.setAttribute('data-theme', savedTheme)
-    
-    // REMOVED: Language restoration from localStorage
-    // const savedLang = localStorage.getItem(LANG_KEY) as Language | null
-    // if (savedLang) setLanguage(savedLang)
-    // Language will stay null, showing the selection screen
   }, [])
 
   useEffect(() => {
@@ -128,7 +116,6 @@ export default function Home() {
 
   function handleSelectLanguage(lang: Language) {
     setLanguage(lang)
-    // REMOVED: localStorage.setItem(LANG_KEY, lang)  - No longer saving language
     setMode('en-to-lang')
     setResult(null)
     setCheckResult(null)
@@ -257,7 +244,7 @@ export default function Home() {
 
   const langName = language ? LANG_NAMES[language] : ''
 
-  // Language selection screen - shown first on every visit
+  // Language selection screen
   if (!language) {
     return (
       <LanguageSelect
@@ -283,7 +270,7 @@ export default function Home() {
         <header className="header">
           <div className="header-top">
             <button className="switch-lang-btn" onClick={() => setLanguage(null)}>
-              {'\u2190'} Languages
+              ← Languages
             </button>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <ThemeToggle theme={theme} onToggle={toggleTheme} />
@@ -298,15 +285,15 @@ export default function Home() {
           </div>
           <h1>
             <span style={{ color: 'var(--accent)' }}>Tri</span>lingo
-            <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}> {'\u2014'} {langName}</span>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}> — {langName}</span>
           </h1>
           <p>Translate, check your writing, practise conversations, and master the {langName} alphabet.</p>
         </header>
 
         <div className="top-tabs">
           {([
-            ['en-to-lang', 'EN \u2192 ' + langName.slice(0, 2)],
-            ['lang-to-en', langName.slice(0, 2) + ' \u2192 EN'],
+            ['en-to-lang', 'EN → ' + langName.slice(0, 2)],
+            ['lang-to-en', langName.slice(0, 2) + ' → EN'],
             ['check', 'Check'],
             ['converse', 'Converse'],
             ['alphabet', 'Alphabet'],
@@ -352,7 +339,7 @@ export default function Home() {
               <div style={{ position: 'relative' }}>
                 {isMockResult && (
                   <div className="mock-badge">
-                    Preview {'\u2014'} this is what your results look like
+                    Preview — this is what your results look like
                   </div>
                 )}
                 <ResultCard result={result} />
@@ -386,5 +373,5 @@ export default function Home() {
         />
       )}
     </main>
-  )
+  );
 }

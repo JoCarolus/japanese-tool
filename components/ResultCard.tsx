@@ -27,69 +27,58 @@ export default function ResultCard({ result }: Props) {
   const { isPlaying, isLoading, speak, stop } = useAudioPlayer();
 
   const handlePlay = async () => {
-  let text = '';
-  let langCode = 'ja-JP';
-  
-  // Check if japanese_kanji contains Chinese characters
-  const textToCheck = result.japanese_kanji || '';
-  const hasChinese = /[\u4e00-\u9fff]/.test(textToCheck);
-  const hasKorean = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(textToCheck);
-  
-  if (hasChinese) {
-    // This is Chinese, not Japanese
-    text = textToCheck;
-    langCode = 'zh-CN';
-    console.log('🇨🇳 Detected Chinese:', text);
-  } else if (hasKorean) {
-    text = textToCheck;
-    langCode = 'ko-KR';
-    console.log('🇰🇷 Detected Korean:', text);
-  } else if (result.chinese) {
-    text = result.chinese;
-    langCode = 'zh-CN';
-  } else if (result.korean) {
-    text = result.korean;
-    langCode = 'ko-KR';
-  } else if (result.japanese_kanji) {
-    text = result.japanese_kanji;
-    langCode = 'ja-JP';
-  } else if (result.japanese_kana) {
-    text = result.japanese_kana;
-    langCode = 'ja-JP';
-  } else if (result.japanese_romaji) {
-    text = result.japanese_romaji;
-    langCode = 'ja-JP';
-  } else {
-    text = result.english;
-  }
-  
-  if (!text) return;
-  await speak(text, langCode);
-};
+    let text = '';
+    let langCode = 'ja-JP';
+    
+    // Check for Chinese characters
+    const textToCheck = result.japanese_kanji || '';
+    const hasChinese = /[\u4e00-\u9fff]/.test(textToCheck);
+    const hasKorean = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(textToCheck);
+    
+    if (hasChinese) {
+      text = textToCheck;
+      langCode = 'zh-CN';
+    } else if (hasKorean) {
+      text = textToCheck;
+      langCode = 'ko-KR';
+    } else if (result.chinese) {
+      text = result.chinese;
+      langCode = 'zh-CN';
+    } else if (result.korean) {
+      text = result.korean;
+      langCode = 'ko-KR';
+    } else if (result.japanese_kanji) {
+      text = result.japanese_kanji;
+      langCode = 'ja-JP';
+    } else if (result.japanese_kana) {
+      text = result.japanese_kana;
+      langCode = 'ja-JP';
+    } else if (result.japanese_romaji) {
+      text = result.japanese_romaji;
+      langCode = 'ja-JP';
+    } else {
+      text = result.english;
+    }
+    
+    if (!text) return;
+    await speak(text, langCode);
+  };
 
   const handleStop = () => {
     stop();
   };
 
-  // Play icon SVG (triangle)
+  // Play icon SVG
   const PlayIcon = () => (
     <svg width="12" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 6, marginBottom: -1 }}>
       <polygon points="5,3 19,12 5,21" />
     </svg>
   )
 
-  // Stop icon SVG (square)
+  // Stop icon SVG
   const StopIcon = () => (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 6, marginBottom: -1 }}>
       <rect x="4" y="4" width="16" height="16" rx="2" />
-    </svg>
-  )
-
-  // Loading spinner SVG
-  const LoadingIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 6, animation: 'spin 1s linear infinite' }}>
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" />
-      <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeLinecap="round" />
     </svg>
   )
 
@@ -130,10 +119,7 @@ export default function ResultCard({ result }: Props) {
           disabled={isLoading}
         >
           {isLoading ? (
-            <>
-              <LoadingIcon />
-              Loading...
-            </>
+            '⏳ Loading...'
           ) : isPlaying ? (
             <>
               <StopIcon />
@@ -217,14 +203,6 @@ export default function ResultCard({ result }: Props) {
           />
         </div>
       )}
-
-      {/* Add spinning animation for loading icon */}
-      <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }
