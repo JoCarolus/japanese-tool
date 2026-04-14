@@ -27,6 +27,14 @@ export default function ResultCard({ result }: Props) {
   const { isPlaying, isLoading, speak, stop } = useAudioPlayer();
 
   const handlePlay = async () => {
+  console.log('=== 🎯 handlePlay called ===');
+  console.log('Full result object:', result);
+  console.log('result.chinese:', result.chinese);
+  console.log('result.korean:', result.korean);
+  console.log('result.japanese_kanji:', result.japanese_kanji);
+  console.log('result.japanese_kana:', result.japanese_kana);
+  console.log('result.japanese_romaji:', result.japanese_romaji);
+  
   // Determine the correct text and language
   let text = '';
   let langCode = 'ja-JP';
@@ -35,33 +43,42 @@ export default function ResultCard({ result }: Props) {
   if (result.chinese) {
     text = result.chinese;
     langCode = 'zh-CN';
+    console.log('✅ Using Chinese field, text:', text);
   }
   // Korean - use the korean field
   else if (result.korean) {
     text = result.korean;
     langCode = 'ko-KR';
+    console.log('✅ Using Korean field, text:', text);
   }
   // Japanese - use kanji first, then kana, then romaji
   else if (result.japanese_kanji) {
     text = result.japanese_kanji;
     langCode = 'ja-JP';
+    console.log('✅ Using Japanese kanji, text:', text);
   }
   else if (result.japanese_kana) {
     text = result.japanese_kana;
     langCode = 'ja-JP';
+    console.log('✅ Using Japanese kana, text:', text);
   }
   else if (result.japanese_romaji) {
     text = result.japanese_romaji;
     langCode = 'ja-JP';
+    console.log('✅ Using Japanese romaji, text:', text);
   }
   // Fallback
   else {
     text = result.english;
+    console.log('⚠️ Using English fallback, text:', text);
   }
   
-  if (!text) return;
+  if (!text) {
+    console.log('❌ No text found!');
+    return;
+  }
   
-  console.log('Playing:', text, 'Language:', langCode); // Debug log
+  console.log('🎤 FINAL - Calling speak with:', { text, langCode });
   await speak(text, langCode);
 };
 
