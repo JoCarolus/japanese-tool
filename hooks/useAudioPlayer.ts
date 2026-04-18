@@ -18,6 +18,8 @@ export function useAudioPlayer() {
   const speak = useCallback(async (text: string, langCode: string) => {
     if (!text || isPlaying) return;
     
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
     setIsLoading(true);
     
     try {

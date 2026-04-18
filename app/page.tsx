@@ -336,15 +336,15 @@ export default function Home() {
             )}
 
             {result && (
-              <div style={{ position: 'relative' }}>
-                {isMockResult && (
-                  <div className="mock-badge">
-                    Preview — this is what your results look like
-                  </div>
-                )}
-                <ResultCard result={result} />
-              </div>
-            )}
+  <div style={{ position: 'relative' }}>
+    {isMockResult && (
+      <div className="mock-badge">
+        Preview — this is what your results look like
+      </div>
+    )}
+    <ResultCard result={result} targetLanguage={language} />
+  </div>
+)}
 
             {checkResult && <CheckResultCard result={checkResult} />}
 

@@ -6,25 +6,45 @@ import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 
 type Props = {
   result: TranslationResult
+  targetLanguage?: 'japanese' | 'korean' | 'chinese'
 }
 
 function InlineCopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
   function handleCopy() {
+    if (!text) return
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     })
   }
   return (
-    <button className="inline-copy-btn" onClick={handleCopy}>
+    <button className="inline-copy-btn" onClick={handleCopy} disabled={!text}>
       {copied ? '✓' : 'Copy'}
     </button>
   )
 }
 
-export default function ResultCard({ result }: Props) {
+export default function ResultCard({ result, targetLanguage }: Props) {
   const { isPlaying, isLoading, speak, stop } = useAudioPlayer();
+
+  // Determine which language is being displayed
+  const getDisplayLanguage = () => {
+    if (targetLanguage === 'korean') return 'Korean'
+    if (targetLanguage === 'chinese') return 'Chinese'
+    if (targetLanguage === 'japanese') return 'Japanese'
+    // Fallback to detection from result
+    if (result.korean) return 'Korean'
+    if (result.chinese) return 'Chinese'
+    return 'Japanese'
+  }
+
+  // Get the main translation text
+  const getMainText = () => {
+    if (targetLanguage === 'korean') return result.korean || ''
+    if (targetLanguage === 'chinese') return result.chinese || ''
+    return result.japanese_kanji || result.korean || result.chinese || ''
+  }
 
   const handlePlay = async () => {
     let text = '';
@@ -68,19 +88,21 @@ export default function ResultCard({ result }: Props) {
     stop();
   };
 
-  // Play icon SVG
+  // SVG Icons
   const PlayIcon = () => (
     <svg width="12" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 6, marginBottom: -1 }}>
       <polygon points="5,3 19,12 5,21" />
     </svg>
   )
 
-  // Stop icon SVG
   const StopIcon = () => (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 6, marginBottom: -1 }}>
       <rect x="4" y="4" width="16" height="16" rx="2" />
     </svg>
   )
+
+  const mainText = getMainText()
+  const displayLanguage = getDisplayLanguage()
 
   return (
     <div className="result-card">
@@ -90,25 +112,29 @@ export default function ResultCard({ result }: Props) {
       </div>
 
       <div className="result-section result-japanese">
-        <div className="section-label">Japanese / Korean / Chinese</div>
+        <div className="section-label">{displayLanguage}</div>
         <div className="japanese-block">
           <div className="japanese-line">
-            <div className="japanese-kanji">{result.japanese_kanji}</div>
-            <InlineCopyButton text={result.japanese_kanji} />
+            <div className="japanese-kanji">{mainText || '—'}</div>
+            <InlineCopyButton text={mainText} />
           </div>
 
-          {result.japanese_kana && (
-            <div className="japanese-line">
-              <div className="japanese-kana">Reading: {result.japanese_kana}</div>
-              <InlineCopyButton text={result.japanese_kana} />
-            </div>
-          )}
+          {(result.japanese_kana || result.japanese_romaji) && (
+            <>
+              {result.japanese_kana && (
+                <div className="japanese-line">
+                  <div className="japanese-kana">Reading: {result.japanese_kana}</div>
+                  <InlineCopyButton text={result.japanese_kana} />
+                </div>
+              )}
 
-          {result.japanese_romaji && (
-            <div className="japanese-line">
-              <div className="japanese-romaji">Romaji: {result.japanese_romaji}</div>
-              <InlineCopyButton text={result.japanese_romaji} />
-            </div>
+              {result.japanese_romaji && (
+                <div className="japanese-line">
+                  <div className="japanese-romaji">Romaji: {result.japanese_romaji}</div>
+                  <InlineCopyButton text={result.japanese_romaji} />
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -116,7 +142,7 @@ export default function ResultCard({ result }: Props) {
           className={'play-btn ' + (isPlaying ? 'playing' : '')}
           style={{ marginTop: 12 }}
           onClick={isPlaying ? handleStop : handlePlay}
-          disabled={isLoading}
+          disabled={isLoading || !mainText}
         >
           {isLoading ? (
             '⏳ Loading...'

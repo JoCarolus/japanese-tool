@@ -1843,6 +1843,7 @@ textarea::placeholder { color: var(--text-placeholder); }
   border-radius: var(--radius-md);
   color: var(--text-primary);
   outline: none;
+  appearance: textfield;
   -moz-appearance: textfield;
 }
 
@@ -1915,4 +1916,66 @@ textarea::placeholder { color: var(--text-placeholder); }
   border-radius: 18px;
   margin: 0 auto 16px;
   display: block;
+}
+
+/* Add to your global.css - Fix for language card text centering */
+.lang-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;  /* Add this */
+  gap: 10px;
+}
+
+.lang-card-script {
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--text-primary);
+  white-space: nowrap;
+  text-align: center;  /* Add this */
+  width: 100%;  /* Add this */
+}
+
+.lang-card-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;  /* Add this */
+  width: 100%;  /* Add this */
+}
+
+.lang-card-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  text-align: center;  /* Add this */
+  width: 100%;  /* Add this */
+}
+.history-item-content {
+  flex: 1;
+  cursor: pointer;
+}
+
+.history-translation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.history-translation-text {
+  font-size: 1rem;
+  color: var(--accent);
+}
+
+.history-arrow {
+  color: var(--text-muted);
+  font-size: 1.2rem;
 }
