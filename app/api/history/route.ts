@@ -33,9 +33,30 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'save') {
+      // Prepare the translation data with all fields
+      const translationData = {
+        user_id: userId,
+        language: language,
+        input_text: translation.input_text || translation.english || '',
+        direction: translation.direction || 'en-to-lang',
+        english: translation.english || '',
+        japanese_kanji: translation.japanese_kanji || '',
+        japanese_kana: translation.japanese_kana || '',
+        japanese_romaji: translation.japanese_romaji || '',
+        korean: translation.korean || null,
+        chinese: translation.chinese || null,
+        syllable_breakdown: translation.syllable_breakdown || '',
+        pitch_accent: translation.pitch_accent || '',
+        pronunciation_tips: translation.pronunciation_tips || '',
+        breakdown: translation.breakdown || [],
+        structure: translation.structure || '',
+        tips: translation.tips || '',
+        created_at: new Date().toISOString()
+      }
+
       const { error } = await supabase
         .from('translations')
-        .insert({ ...translation, user_id: userId, language })
+        .insert(translationData)
 
       if (error) {
         console.error('History save error:', error)
