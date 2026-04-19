@@ -160,7 +160,7 @@ export default function ResultCard({ result, targetLanguage }: Props) {
         </button>
       </div>
 
-      {(result.syllable_breakdown || result.pitch_accent || result.pronunciation_tips) && (
+            {(result.syllable_breakdown || result.pitch_accent || result.pronunciation_tips) && (
         <div className="result-section result-pronunciation">
           <div className="section-label">Pronunciation</div>
           {result.syllable_breakdown && (
@@ -184,7 +184,7 @@ export default function ResultCard({ result, targetLanguage }: Props) {
         </div>
       )}
 
-      {result.breakdown?.length > 0 && (
+      {result.breakdown && result.breakdown.length > 0 && (
         <div className="result-section result-breakdown">
           <div className="section-label">Word Breakdown</div>
           <table className="breakdown-table">
