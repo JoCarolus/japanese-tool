@@ -18,6 +18,7 @@ import PinPrompt, { shouldShowPinPrompt } from '@/components/PinPrompt'
 
 const TOUR_KEY = 'language-tool-tour-done'
 const SKIP_AUTH_KEY = 'language-tool-skip-auth'
+const LANG_KEY = 'language-tool-last-lang'
 const THEME_KEY = 'language-tool-theme'
 
 type Language = 'japanese' | 'korean' | 'chinese'
@@ -27,6 +28,12 @@ const LANG_NAMES: Record<Language, string> = {
   japanese: 'Japanese',
   korean: 'Korean',
   chinese: 'Chinese',
+}
+
+const LANG_SCRIPTS: Record<Language, string> = {
+  japanese: '\u65e5\u672c\u8a9e',
+  korean: '\ud55c\uad6d\uc5b4',
+  chinese: '\u4e2d\u6587',
 }
 
 export default function Home() {
@@ -47,42 +54,40 @@ export default function Home() {
   const [showAuth, setShowAuth] = useState(false)
   const [showPinPrompt, setShowPinPrompt] = useState(false)
 
+  // Init theme and language from localStorage
   useEffect(() => {
     const savedTheme = (localStorage.getItem(THEME_KEY) as 'light' | 'dark') ||
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     setTheme(savedTheme)
     document.documentElement.setAttribute('data-theme', savedTheme)
+
+    const savedLang = localStorage.getItem(LANG_KEY) as Language | null
+    if (savedLang) setLanguage(savedLang)
   }, [])
 
+  // Auth check
   useEffect(() => {
-    async function checkAuth() {
-      await new Promise(resolve => setTimeout(resolve, 150))
-
-      const { data: { session } } = await supabase.auth.getSession()
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setAuthUser(session.user)
         setAuthChecked(true)
-        return
+      } else {
+        // Check for PIN session
+        const pinUserId = localStorage.getItem('pin_user_id')
+        if (pinUserId) {
+          setAuthUser({ id: pinUserId, email: 'PIN user', isPinUser: true })
+          setAuthChecked(true)
+        } else {
+          setAuthChecked(true)
+          const skipped = localStorage.getItem(SKIP_AUTH_KEY)
+          if (!skipped && language) setShowAuth(true)
+        }
       }
-
-      const pinUserId = localStorage.getItem('pin_user_id')
-      const pinEmail = localStorage.getItem('pin_user_email')
-      if (pinUserId) {
-        setAuthUser({ id: pinUserId, email: pinEmail || 'PIN user', isPinUser: true })
-        setAuthChecked(true)
-        return
-      }
-
-      setAuthChecked(true)
-      const skipped = localStorage.getItem(SKIP_AUTH_KEY)
-      if (!skipped && language) setShowAuth(true)
-    }
-
-    checkAuth()
+    })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user ?? null)
       if (session?.user) {
-        setAuthUser(session.user)
         setShowAuth(false)
         if (language) loadHistory(session.user.id, language)
         if (shouldShowPinPrompt()) setShowPinPrompt(true)
@@ -92,6 +97,7 @@ export default function Home() {
     return () => subscription.unsubscribe()
   }, [language])
 
+  // Load history and tour after auth check
   useEffect(() => {
     if (!authChecked || !language) return
     if (authUser) loadHistory(authUser.id, language)
@@ -116,6 +122,7 @@ export default function Home() {
 
   function handleSelectLanguage(lang: Language) {
     setLanguage(lang)
+    localStorage.setItem(LANG_KEY, lang)
     setMode('en-to-lang')
     setResult(null)
     setCheckResult(null)
@@ -131,17 +138,13 @@ export default function Home() {
     setShowAuth(false)
   }
 
-  function handlePinLogin(userId: string, email: string) {
-    localStorage.setItem('pin_user_email', email)
-    const pinUser = { id: userId, email: email || 'PIN user', isPinUser: true }
-    setAuthUser(pinUser)
+  function handlePinLogin(userId: string) {
     setShowAuth(false)
+    // Load history using userId directly since no Supabase session
     if (language) loadHistory(userId, language)
   }
 
   function handleSignOut() {
-    localStorage.removeItem('pin_user_id')
-    localStorage.removeItem('pin_user_email')
     setAuthUser(null)
     setHistory([])
   }
@@ -165,13 +168,14 @@ export default function Home() {
   }
 
   async function loadHistory(userId: string, lang: Language) {
-    const res = await fetch('/api/history', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'fetch', userId, language: lang }),
-    })
-    const json = await res.json()
-    if (json.data) setHistory(json.data as Translation[])
+    const { data, error } = await supabase
+      .from('translations')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('language', lang)
+      .order('created_at', { ascending: false })
+      .limit(20)
+    if (!error && data) setHistory(data as Translation[])
   }
 
   async function handleSubmit() {
@@ -203,17 +207,14 @@ export default function Home() {
         setResult(data)
 
         if (authUser) {
-          await fetch('/api/history', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'save',
-              userId: authUser.id,
-              language,
-              translation: { input_text: trimmed, direction: mode, ...data },
-            }),
+          const { error: dbError } = await supabase.from('translations').insert({
+            input_text: trimmed,
+            direction: mode,
+            user_id: authUser.id,
+            language,
+            ...data,
           })
-          loadHistory(authUser.id, language)
+          if (!dbError) loadHistory(authUser.id, language)
         }
       }
     } catch {
@@ -234,17 +235,18 @@ export default function Home() {
 
   async function handleClearHistory() {
     if (!authUser || !language) return
-    await fetch('/api/history', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'clear', userId: authUser.id, language }),
-    })
-    setHistory([])
+    const { error } = await supabase
+      .from('translations')
+      .delete()
+      .eq('user_id', authUser.id)
+      .eq('language', language)
+    if (!error) setHistory([])
   }
 
   const langName = language ? LANG_NAMES[language] : ''
+  const langScript = language ? LANG_SCRIPTS[language] : ''
 
-  // Language selection screen
+  // Show language selection if none chosen
   if (!language) {
     return (
       <LanguageSelect
@@ -255,18 +257,16 @@ export default function Home() {
     )
   }
 
-  if (showAuth) return (
-    <AuthScreen
-      onSkip={handleSkipAuth}
-      onPinLogin={handlePinLogin}
-    />
-  )
+  // Show auth screen
+  if (showAuth) return <AuthScreen onSkip={handleSkipAuth} onPinLogin={handlePinLogin} />
 
+  // Wait for auth check
   if (!authChecked) return null
 
   return (
     <main className="main">
       <div className="container">
+
         <header className="header">
           <div className="header-top">
             <button className="switch-lang-btn" onClick={() => setLanguage(null)}>
@@ -283,24 +283,21 @@ export default function Home() {
               )}
             </div>
           </div>
-          <h1>
-            <span style={{ color: 'var(--accent)' }}>Tri</span>lingo
-            <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}> — {langName}</span>
-          </h1>
+          <h1><span style={{color: "var(--accent)"}}>Tri</span>lingo<span style={{color: "var(--text-secondary)", fontWeight: 700}}> — {langName}</span></h1>
           <p>Translate, check your writing, practise conversations, and master the {langName} alphabet.</p>
         </header>
 
         <div className="top-tabs">
           {([
-            ['en-to-lang', 'EN → ' + langName.slice(0, 2)],
-            ['lang-to-en', langName.slice(0, 2) + ' → EN'],
+            ['en-to-lang', `EN → ${langName.slice(0, 2)}`],
+            ['lang-to-en', `${langName.slice(0, 2)} → EN`],
             ['check', 'Check'],
             ['converse', 'Converse'],
             ['alphabet', 'Alphabet'],
           ] as [Mode, string][]).map(([m, label]) => (
             <button
               key={m}
-              className={'top-tab ' + (mode === m ? 'active' : '')}
+              className={`top-tab ${mode === m ? 'active' : ''}`}
               onClick={() => handleModeChange(m)}
             >
               {label}
@@ -336,15 +333,15 @@ export default function Home() {
             )}
 
             {result && (
-  <div style={{ position: 'relative' }}>
-    {isMockResult && (
-      <div className="mock-badge">
-        Preview — this is what your results look like
-      </div>
-    )}
-    <ResultCard result={result} targetLanguage={language} />
-  </div>
-)}
+              <div style={{ position: 'relative' }}>
+                {isMockResult && (
+                  <div className="mock-badge">
+                    Preview — this is what your results look like
+                  </div>
+                )}
+                <ResultCard result={result} targetLanguage={language as any} />
+              </div>
+            )}
 
             {checkResult && <CheckResultCard result={checkResult} />}
 
@@ -363,6 +360,7 @@ export default function Home() {
             )}
           </>
         )}
+
       </div>
 
       {showTour && <TutorialTour onComplete={handleTourComplete} />}
@@ -373,5 +371,5 @@ export default function Home() {
         />
       )}
     </main>
-  );
+  )
 }

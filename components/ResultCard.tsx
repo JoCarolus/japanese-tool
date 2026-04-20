@@ -47,39 +47,18 @@ export default function ResultCard({ result, targetLanguage }: Props) {
   }
 
   const handlePlay = async () => {
-    let text = '';
-    let langCode = 'ja-JP';
-    
-    // Check for Chinese characters
-    const textToCheck = result.japanese_kanji || '';
-    const hasChinese = /[\u4e00-\u9fff]/.test(textToCheck);
-    const hasKorean = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(textToCheck);
-    
-    if (hasChinese) {
-      text = textToCheck;
-      langCode = 'zh-CN';
-    } else if (hasKorean) {
-      text = textToCheck;
-      langCode = 'ko-KR';
-    } else if (result.chinese) {
-      text = result.chinese;
-      langCode = 'zh-CN';
-    } else if (result.korean) {
-      text = result.korean;
-      langCode = 'ko-KR';
-    } else if (result.japanese_kanji) {
-      text = result.japanese_kanji;
-      langCode = 'ja-JP';
-    } else if (result.japanese_kana) {
-      text = result.japanese_kana;
-      langCode = 'ja-JP';
-    } else if (result.japanese_romaji) {
-      text = result.japanese_romaji;
-      langCode = 'ja-JP';
-    } else {
-      text = result.english;
-    }
-    
+    // Use targetLanguage prop directly — never detect from characters
+    // Japanese kanji and Chinese characters share the same Unicode range
+    const langCode =
+      targetLanguage === 'korean' ? 'ko-KR' :
+      targetLanguage === 'chinese' ? 'zh-CN' :
+      'ja-JP';
+
+    const text =
+      targetLanguage === 'korean' ? (result.korean || result.japanese_kanji || '') :
+      targetLanguage === 'chinese' ? (result.chinese || result.japanese_kanji || '') :
+      (result.japanese_kanji || result.japanese_kana || '');
+
     if (!text) return;
     await speak(text, langCode);
   };
