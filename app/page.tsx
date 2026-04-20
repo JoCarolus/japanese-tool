@@ -83,7 +83,8 @@ export default function Home() {
         }
         setAuthChecked(true)
         const skipped = localStorage.getItem(SKIP_AUTH_KEY)
-        if (!skipped && language) setShowAuth(true)
+        const pinActive = localStorage.getItem('pin_user_id')
+        if (!skipped && !pinActive && language) setShowAuth(true)
       }
     })
 
