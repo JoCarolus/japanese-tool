@@ -67,6 +67,7 @@ export default function AuthScreen({ onSkip, onPinLogin }: Props) {
       const data = await res.json()
       if (data.success && data.userId) {
         localStorage.setItem('pin_user_id', data.userId)
+        if (data.email) localStorage.setItem('pin_user_email', data.email)
         await new Promise(resolve => setTimeout(resolve, 100))
         const saved = localStorage.getItem('pin_user_id')
         if (saved === data.userId) {

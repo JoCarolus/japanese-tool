@@ -72,16 +72,18 @@ export default function Home() {
         setAuthUser(session.user)
         setAuthChecked(true)
       } else {
-        // Check for PIN session
+        // Check for PIN session first — takes priority over showing auth screen
         const pinUserId = localStorage.getItem('pin_user_id')
+        const pinEmail = localStorage.getItem('pin_user_email')
         if (pinUserId) {
-          setAuthUser({ id: pinUserId, email: 'PIN user', isPinUser: true })
+          setAuthUser({ id: pinUserId, email: pinEmail || 'PIN user', isPinUser: true })
           setAuthChecked(true)
-        } else {
-          setAuthChecked(true)
-          const skipped = localStorage.getItem(SKIP_AUTH_KEY)
-          if (!skipped && language) setShowAuth(true)
+          // Don't show auth screen — PIN user is logged in
+          return
         }
+        setAuthChecked(true)
+        const skipped = localStorage.getItem(SKIP_AUTH_KEY)
+        if (!skipped && language) setShowAuth(true)
       }
     })
 
@@ -130,7 +132,8 @@ export default function Home() {
     setIntended('')
     setHistory([])
     if (authUser) loadHistory(authUser.id, lang)
-    if (!authUser && !localStorage.getItem(SKIP_AUTH_KEY)) setShowAuth(true)
+    const isPinLoggedIn = !!localStorage.getItem('pin_user_id')
+    if (!authUser && !isPinLoggedIn && !localStorage.getItem(SKIP_AUTH_KEY)) setShowAuth(true)
   }
 
   function handleSkipAuth() {
@@ -138,13 +141,17 @@ export default function Home() {
     setShowAuth(false)
   }
 
-  function handlePinLogin(userId: string) {
+  function handlePinLogin(userId: string, email?: string) {
+    localStorage.setItem('pin_user_id', userId)
+    if (email) localStorage.setItem('pin_user_email', email)
+    setAuthUser({ id: userId, email: email || 'PIN user', isPinUser: true })
     setShowAuth(false)
-    // Load history using userId directly since no Supabase session
     if (language) loadHistory(userId, language)
   }
 
   function handleSignOut() {
+    localStorage.removeItem('pin_user_id')
+    localStorage.removeItem('pin_user_email')
     setAuthUser(null)
     setHistory([])
   }
@@ -168,14 +175,14 @@ export default function Home() {
   }
 
   async function loadHistory(userId: string, lang: Language) {
-    const { data, error } = await supabase
-      .from('translations')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('language', lang)
-      .order('created_at', { ascending: false })
-      .limit(20)
-    if (!error && data) setHistory(data as Translation[])
+    // Use server-side API so PIN users (no Supabase session) can access history
+    const res = await fetch('/api/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, language: lang }),
+    })
+    const result = await res.json()
+    if (result.data) setHistory(result.data)
   }
 
   async function handleSubmit() {
