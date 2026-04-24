@@ -10,6 +10,7 @@ import HistoryList from '@/components/HistoryList'
 import TutorialTour from '@/components/TutorialTour'
 import ConversationMode from '@/components/ConversationMode'
 import AlphabetSection from '@/components/AlphabetSection'
+import VocabularySection from '@/components/VocabularySection'
 import AuthScreen from '@/components/AuthScreen'
 import UserMenu from '@/components/UserMenu'
 import LanguageSelect from '@/components/LanguageSelect'
@@ -22,7 +23,7 @@ const LANG_KEY = 'language-tool-last-lang'
 const THEME_KEY = 'language-tool-theme'
 
 type Language = 'japanese' | 'korean' | 'chinese'
-type Mode = 'en-to-lang' | 'lang-to-en' | 'check' | 'converse' | 'alphabet'
+type Mode = 'translate' | 'check' | 'converse' | 'vocabulary' | 'alphabet'
 
 const LANG_NAMES: Record<Language, string> = {
   japanese: 'Japanese',
@@ -39,7 +40,8 @@ const LANG_SCRIPTS: Record<Language, string> = {
 export default function Home() {
   const [language, setLanguage] = useState<Language | null>(null)
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
-  const [mode, setMode] = useState<Mode>('en-to-lang')
+  const [mode, setMode] = useState<Mode>('translate')
+  const [translateDir, setTranslateDir] = useState<'en-to-lang' | 'lang-to-en'>('en-to-lang')
   const [input, setInput] = useState('')
   const [intended, setIntended] = useState('')
   const [loading, setLoading] = useState(false)
@@ -126,7 +128,8 @@ export default function Home() {
   function handleSelectLanguage(lang: Language) {
     setLanguage(lang)
     localStorage.setItem(LANG_KEY, lang)
-    setMode('en-to-lang')
+    setMode('translate')
+    setTranslateDir('en-to-lang')
     setResult(null)
     setCheckResult(null)
     setInput('')
@@ -297,10 +300,10 @@ export default function Home() {
 
         <div className="top-tabs">
           {([
-            ['en-to-lang', `EN → ${langName.slice(0, 2)}`],
-            ['lang-to-en', `${langName.slice(0, 2)} → EN`],
+            ['translate', 'Translate'],
             ['check', 'Check'],
             ['converse', 'Converse'],
+            ['vocabulary', 'Vocabulary'],
             ['alphabet', 'Alphabet'],
           ] as [Mode, string][]).map(([m, label]) => (
             <button
@@ -315,13 +318,30 @@ export default function Home() {
 
         {mode === 'converse' && <ConversationMode language={language} />}
         {mode === 'alphabet' && <AlphabetSection language={language} />}
+        {mode === 'vocabulary' && <VocabularySection language={language} userId={authUser?.id || null} />}
 
-        {mode !== 'converse' && mode !== 'alphabet' && (
+        {mode !== 'converse' && mode !== 'alphabet' && mode !== 'vocabulary' && (
           <>
-            <TranslateInput
+            {mode === 'translate' && (
+              <div className="translate-dir-toggle">
+                <button
+                  className={`dir-btn ${translateDir === 'en-to-lang' ? 'active' : ''}`}
+                  onClick={() => setTranslateDir('en-to-lang')}
+                >
+                  EN → {langName.slice(0, 2)}
+                </button>
+                <button
+                  className={`dir-btn ${translateDir === 'lang-to-en' ? 'active' : ''}`}
+                  onClick={() => setTranslateDir('lang-to-en')}
+                >
+                  {langName.slice(0, 2)} → EN
+                </button>
+              </div>
+            )}
+          <TranslateInput
               input={input}
               intended={intended}
-              mode={mode as 'en-to-lang' | 'lang-to-en' | 'check'}
+              mode={mode === 'translate' ? translateDir : mode as 'en-to-lang' | 'lang-to-en' | 'check'}
               language={language}
               loading={loading}
               onInputChange={setInput}

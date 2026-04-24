@@ -26,6 +26,12 @@ function InlineCopyButton({ text }: { text: string }) {
 }
 
 export default function HistoryList({ history, onSelect, onClear }: Props) {
+  function handleSelect(item: Translation) {
+    onSelect(item)
+    // Scroll to top of page so result is visible
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   if (history.length === 0) {
     return (
       <div className="history-section">
@@ -49,19 +55,16 @@ export default function HistoryList({ history, onSelect, onClear }: Props) {
       </div>
       <div className="history-list">
         {history.map((item, idx) => {
-          // Get the translation text based on what's available
           const translationText = item.japanese_kanji || item.korean || item.chinese || ''
-          
           return (
-            <div key={idx} className="history-item" onClick={() => onSelect(item)}>
+            <div key={idx} className="history-item" onClick={() => handleSelect(item)}>
               <div className="history-item-content">
                 <div className="history-original">{item.input_text}</div>
                 <div className="history-translation">
                   <span className="history-translation-text">{translationText}</span>
-                  <InlineCopyButton text={translationText} />
+                  {translationText && <InlineCopyButton text={translationText} />}
                 </div>
               </div>
-              <div className="history-arrow">→</div>
             </div>
           )
         })}
