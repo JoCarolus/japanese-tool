@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 type VocabWord = {
   id: string
@@ -20,31 +20,43 @@ type Props = {
 
 type VocabMode = 'all' | 'flashcard' | 'quiz'
 
-function useSpeech() {
-  const [speaking, setSpeaking] = useState<string | null>(null)
-  function speak(text: string, id: string, lang: string) {
-    if (!window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    if (speaking === id) { setSpeaking(null); return }
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = lang === 'japanese' ? 'ja-JP' : lang === 'korean' ? 'ko-KR' : 'zh-CN'
-    utterance.rate = 0.85
-    const voices = window.speechSynthesis.getVoices()
-    const code = lang === 'japanese' ? 'ja' : lang === 'korean' ? 'ko' : 'zh'
-    const voice = voices.find(v => v.lang.startsWith(code))
-    if (voice) utterance.voice = voice
-    utterance.onstart = () => setSpeaking(id)
-    utterance.onend = () => setSpeaking(null)
-    utterance.onerror = () => setSpeaking(null)
-    window.speechSynthesis.speak(utterance)
+function useVocabAudio(language: string) {
+  const [playingId, setPlayingId] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  function stop() {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+    }
+    setPlayingId(null)
   }
-  return { speaking, speak }
+
+  async function speak(text: string, id: string) {
+    if (playingId === id) { stop(); return }
+    stop()
+    const langCode = language === 'korean' ? 'ko-KR' : language === 'chinese' ? 'zh-CN' : 'ja-JP'
+    try {
+      const response = await fetch(`/api/tts?text=${encodeURIComponent(text)}&lang=${langCode}`)
+      if (!response.ok) return
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      audioRef.current = audio
+      setPlayingId(id)
+      audio.onended = () => { setPlayingId(null); URL.revokeObjectURL(url); audioRef.current = null }
+      audio.onerror = () => { setPlayingId(null); URL.revokeObjectURL(url); audioRef.current = null }
+      await audio.play()
+    } catch { setPlayingId(null) }
+  }
+
+  return { playingId, speak, stop }
 }
 
 // ── ALL WORDS VIEW ──
 function AllWords({ words, language, onDelete }: { words: VocabWord[], language: string, onDelete: (id: string) => void }) {
   const [expanded, setExpanded] = useState<string | null>(null)
-  const { speaking, speak } = useSpeech()
+  const { playingId, speak } = useVocabAudio(language)
 
   if (words.length === 0) {
     return (
@@ -73,14 +85,13 @@ function AllWords({ words, language, onDelete }: { words: VocabWord[], language:
                 {word.tip && <div className="alpha-card-tip" style={{ marginTop: 4 }}>{word.tip}</div>}
                 <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                   <button
-                    className="flashcard-audio-btn"
-                    onClick={() => speak(word.native, word.id, language)}
+                    className="vocab-play-btn"
+                    onClick={() => speak(word.native, word.id)}
                   >
-                    {speaking === word.id ? '■ Stop' : '▶ Play'}
+                    {playingId === word.id ? '■ Stop' : '▶ Play'}
                   </button>
                   <button
-                    className="flashcard-audio-btn"
-                    style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                    className="vocab-delete-btn"
                     onClick={() => onDelete(word.id)}
                   >
                     Delete
@@ -100,7 +111,7 @@ function VocabFlashcard({ words, language }: { words: VocabWord[], language: str
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [shuffled, setShuffled] = useState<VocabWord[]>([])
-  const { speaking, speak } = useSpeech()
+  const { playingId, speak } = useVocabAudio(language)
 
   useEffect(() => {
     setShuffled([...words].sort(() => Math.random() - 0.5))
@@ -132,9 +143,9 @@ function VocabFlashcard({ words, language }: { words: VocabWord[], language: str
           </div>
           <div className="flashcard-back">
             <div className="flashcard-char" style={{ fontSize: '2.5rem' }}>{card.native}</div>
-            <div className="flashcard-romaji">{card.english}</div>
-            {card.reading && <div className="flashcard-meaning">{card.reading}</div>}
-            {card.romaji && <div className="flashcard-tip">{card.romaji}</div>}
+            {card.reading && <div className="flashcard-romaji" style={{ color: 'var(--accent)', fontSize: '1.1rem' }}>{card.reading}</div>}
+            {card.romaji && <div className="flashcard-meaning">{card.romaji}</div>}
+            <div className="flashcard-tip" style={{ borderTop: '1px solid var(--border)', paddingTop: 8, marginTop: 4 }}>{card.english}</div>
             {card.tip && <div className="flashcard-tip">{card.tip}</div>}
           </div>
         </div>
@@ -144,8 +155,8 @@ function VocabFlashcard({ words, language }: { words: VocabWord[], language: str
         <button className="flashcard-nav-btn" onClick={goPrev} disabled={index === 0}>← Prev</button>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <span className="flashcard-counter">{index + 1} / {shuffled.length}</span>
-          <button className="flashcard-audio-btn" onClick={() => speak(card.native, `fc-${card.id}`, language)}>
-            {speaking === `fc-${card.id}` ? '■ Stop' : '▶ Play'}
+          <button className="vocab-play-btn" onClick={() => speak(card.native, `fc-${card.id}`)}>
+            {playingId === `fc-${card.id}` ? '■ Stop' : '▶ Play'}
           </button>
         </div>
         <button className="flashcard-nav-btn" onClick={goNext} disabled={index === shuffled.length - 1}>Next →</button>
