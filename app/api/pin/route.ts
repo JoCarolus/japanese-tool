@@ -40,37 +40,37 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
 
       if (data) {
-        // Get email from auth.users
-        const { data: authUser } = await supabase.auth.admin.getUserById(data.id)
+        const uid = data.id
+        const { data: authUser } = await supabase.auth.admin.getUserById(uid)
         const email = authUser?.user?.email || ''
 
-        // Create a real Supabase session so PIN users stay logged in
-        // This generates a proper access/refresh token pair
-        const { data: linkData } = await supabase.auth.admin.generateLink({
+        // Generate magic link and exchange token for real session
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://japanese-tool-liard.vercel.app'
+        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
           type: 'magiclink',
           email,
+          options: { redirectTo: appUrl }
         })
 
-        // Use generateLink's token to exchange for a real session
-        // We return the user details and let client handle session via signInWithOtp flow
-        // Instead use createSession which directly gives tokens
-        const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({
-          userId: data.id,
-          // Session options - long lived
-        } as any)
-
-        if (!sessionError && sessionData?.session) {
-          return NextResponse.json({
-            success: true,
-            userId: data.id,
-            email,
-            accessToken: sessionData.session.access_token,
-            refreshToken: sessionData.session.refresh_token,
+        if (!linkError && linkData?.properties?.hashed_token) {
+          const { data: sessionData, error: sessionError } = await supabase.auth.verifyOtp({
+            token_hash: linkData.properties.hashed_token,
+            type: 'magiclink',
           })
+
+          if (!sessionError && sessionData?.session) {
+            return NextResponse.json({
+              success: true,
+              userId: uid,
+              email,
+              accessToken: sessionData.session.access_token,
+              refreshToken: sessionData.session.refresh_token,
+            })
+          }
         }
 
-        // Fallback if session creation fails - return userId for localStorage fallback
-        return NextResponse.json({ success: true, userId: data.id, email })
+        // Fallback to localStorage approach
+        return NextResponse.json({ success: true, userId: uid, email })
       }
       return NextResponse.json({ success: false })
     }
