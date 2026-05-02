@@ -38,10 +38,38 @@ export async function POST(req: NextRequest) {
         .select('id')
         .eq('pin_hash', hashed)
         .maybeSingle()
+
       if (data) {
-        // Get email from auth.users via admin API
+        // Get email from auth.users
         const { data: authUser } = await supabase.auth.admin.getUserById(data.id)
         const email = authUser?.user?.email || ''
+
+        // Create a real Supabase session so PIN users stay logged in
+        // This generates a proper access/refresh token pair
+        const { data: linkData } = await supabase.auth.admin.generateLink({
+          type: 'magiclink',
+          email,
+        })
+
+        // Use generateLink's token to exchange for a real session
+        // We return the user details and let client handle session via signInWithOtp flow
+        // Instead use createSession which directly gives tokens
+        const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({
+          userId: data.id,
+          // Session options - long lived
+        } as any)
+
+        if (!sessionError && sessionData?.session) {
+          return NextResponse.json({
+            success: true,
+            userId: data.id,
+            email,
+            accessToken: sessionData.session.access_token,
+            refreshToken: sessionData.session.refresh_token,
+          })
+        }
+
+        // Fallback if session creation fails - return userId for localStorage fallback
         return NextResponse.json({ success: true, userId: data.id, email })
       }
       return NextResponse.json({ success: false })

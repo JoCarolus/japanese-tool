@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
   const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${languageCode}">
     <voice name="${voiceName}">
-      <prosody rate="0%">${escapeXml(text)}</prosody>
+      <prosody rate="${speed}">${escapeXml(text)}</prosody>
     </voice>
   </speak>`;
 

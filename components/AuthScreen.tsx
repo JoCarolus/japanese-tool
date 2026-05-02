@@ -66,8 +66,20 @@ export default function AuthScreen({ onSkip, onPinLogin }: Props) {
       })
       const data = await res.json()
       if (data.success && data.userId) {
-        localStorage.setItem('pin_user_id', data.userId)
-        if (data.email) localStorage.setItem('pin_user_email', data.email)
+        // Set real Supabase session if tokens returned (Option B)
+        if (data.accessToken && data.refreshToken) {
+          await supabase.auth.setSession({
+            access_token: data.accessToken,
+            refresh_token: data.refreshToken,
+          })
+          // Clear any stale PIN localStorage since we now have a real session
+          localStorage.removeItem('pin_user_id')
+          localStorage.removeItem('pin_user_email')
+        } else {
+          // Fallback: store in localStorage
+          localStorage.setItem('pin_user_id', data.userId)
+          if (data.email) localStorage.setItem('pin_user_email', data.email)
+        }
         await new Promise(resolve => setTimeout(resolve, 100))
         const saved = localStorage.getItem('pin_user_id')
         if (saved === data.userId) {

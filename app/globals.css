@@ -1856,8 +1856,7 @@ textarea::placeholder { color: var(--text-placeholder); }
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin: 0 auto 16px;
-  max-width: 340px;
-  width: 100%;
+  max-width: 280px;
 }
 
 .pin-key {
@@ -1986,50 +1985,64 @@ textarea::placeholder { color: var(--text-placeholder); }
   }
 }
 
+/* =====================
+   SPEED TOGGLE
+   ===================== */
 
-/* Vocabulary play and delete buttons */
-.vocab-play-btn {
-  background: transparent;
-  border: 1px solid var(--border-strong);
-  color: var(--text-secondary);
-  border-radius: var(--radius-full);
-  padding: 5px 14px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  -webkit-appearance: none;
-  appearance: none;
+.speed-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
-.vocab-play-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.vocab-delete-btn {
-  background: transparent;
-  border: 1px solid var(--danger);
-  color: var(--danger);
-  border-radius: var(--radius-full);
-  padding: 5px 12px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  -webkit-appearance: none;
-  appearance: none;
+.speed-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   white-space: nowrap;
 }
 
-.vocab-delete-btn:hover {
-  background: var(--danger-light);
+.speed-options {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-sunken);
+  border-radius: var(--radius-full);
+  padding: 3px;
+}
+
+.speed-btn {
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.speed-btn.active {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.speed-btn:hover:not(.active) {
+  color: var(--text-secondary);
 }
 
 @media (max-width: 480px) {
-  .vocab-play-btn,
-  .vocab-delete-btn {
-    padding: 5px 10px;
+  .speed-toggle {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .speed-btn {
+    padding: 4px 10px;
     font-size: 0.75rem;
   }
 }

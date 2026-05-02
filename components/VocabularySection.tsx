@@ -37,7 +37,8 @@ function useVocabAudio(language: string) {
     stop()
     const langCode = language === 'korean' ? 'ko-KR' : language === 'chinese' ? 'zh-CN' : 'ja-JP'
     try {
-      const response = await fetch(`/api/tts?text=${encodeURIComponent(text)}&lang=${langCode}`)
+      const speed = localStorage.getItem('trilingo-tts-speed') || '0%'
+    const response = await fetch(`/api/tts?text=${encodeURIComponent(text)}&lang=${langCode}&speed=${encodeURIComponent(speed)}`)
       if (!response.ok) return
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)

@@ -11,6 +11,7 @@ import TutorialTour from '@/components/TutorialTour'
 import ConversationMode from '@/components/ConversationMode'
 import AlphabetSection from '@/components/AlphabetSection'
 import VocabularySection from '@/components/VocabularySection'
+import SpeedToggle from '@/components/SpeedToggle'
 import AuthScreen from '@/components/AuthScreen'
 import UserMenu from '@/components/UserMenu'
 import LanguageSelect from '@/components/LanguageSelect'
@@ -362,6 +363,7 @@ export default function Home() {
 
             {result && (
               <div style={{ position: 'relative' }}>
+                <SpeedToggle />
                 {isMockResult && (
                   <div className="mock-badge">
                     Preview — this is what your results look like

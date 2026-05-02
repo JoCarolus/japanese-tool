@@ -28,7 +28,8 @@ export function useAudioPlayer() {
         audioRef.current = null;
       }
       
-      const response = await fetch(`/api/tts?text=${encodeURIComponent(text)}&lang=${langCode}`);
+      const speed = typeof window !== 'undefined' ? localStorage.getItem('trilingo-tts-speed') || '0%' : '0%';
+      const response = await fetch(`/api/tts?text=${encodeURIComponent(text)}&lang=${langCode}&speed=${encodeURIComponent(speed)}`);
       
       if (!response.ok) {
         throw new Error(`TTS failed: ${response.status}`);
