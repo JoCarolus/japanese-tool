@@ -4,6 +4,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const text = searchParams.get('text');
   const lang = searchParams.get('lang');
+  const speed = searchParams.get('speed') || '0%';
 
   if (!text) {
     return NextResponse.json({ error: 'Missing text parameter' }, { status: 400 });
